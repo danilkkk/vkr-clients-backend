@@ -6,10 +6,19 @@ import tokenService from './token-service.js';
 import UserDto from '../dtos/user-dto.js';
 import UserModel from "../models/user-model.js";
 import ApiError from "../exceptions/api-error.js";
+import Roles from "../models/role-model.js";
 
 const PASSWORD_SALT = 5;
 
 class UsersService {
+
+    async createUser(name, surname, email, roles) {
+        const candidate = await userModel.findOne({ email }).exec();
+
+        if (candidate) {
+            throw ApiError.BadRequest(`Email address ${email} is already in use`);
+        }
+    }
 
     async registration(name, surname, email, originalPassword) {
         const candidate = await userModel.findOne({ email }).exec();
@@ -22,7 +31,7 @@ class UsersService {
 
         const activationLink = v4();
 
-        const userDocument = await userModel.create({ name, surname, email, password, activationLink });
+        const userDocument = await userModel.create({ name, surname, email, password, activationLink, roles: [Roles.USER] });
 
         await mailService.sendActivationLink(email, name, `${process.env.API_URL}/users/activate/${activationLink}`);
 

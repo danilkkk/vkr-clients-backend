@@ -33,7 +33,7 @@ class TokenService {
     async saveToken(userId, refreshToken) {
         // TODO: механизм сохранения нескольких токенов (для входа с разных устройств)
 
-        const existingToken = await tokenModel.findOne({ user: userId }).exec();
+        const existingToken = await tokenModel.findOne({ USER: userId }).exec();
 
         if (existingToken) {
             existingToken.refreshToken = refreshToken;

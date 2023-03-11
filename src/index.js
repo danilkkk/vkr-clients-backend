@@ -17,7 +17,10 @@ const DATABASE_URI = process.env.DB_URL ?? `mongodb://localhost:27017/clients`;
 const app = express()
     .use(express.json())
     .use(cookieParser())
-    .use(cors())
+    .use(cors({
+        credentials: true,
+        origin: process.env.CLIENT_URL
+    }))
     .use('/users', usersRouter)
     .use(errorMiddleware);
 

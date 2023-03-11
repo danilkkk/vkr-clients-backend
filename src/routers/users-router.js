@@ -3,6 +3,7 @@ import { body } from 'express-validator';
 import userController from '../controllers/user-controller.js';
 
 import authMiddleware from "../middlewares/auth-middleware.js";
+import Roles from "../models/role-model.js";
 
 const router = new Router();
 
@@ -19,6 +20,6 @@ router.get('/activate/:link', userController.activate);
 
 router.get('/refresh', userController.refresh);
 
-router.get('/',  authMiddleware, userController.getUsers);
+router.get('/', authMiddleware(Roles.USER), userController.getUsers);
 
 export default router;
