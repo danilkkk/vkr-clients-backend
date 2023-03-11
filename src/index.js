@@ -8,6 +8,8 @@ import logger from './logger.js';
 
 import usersRouter from './routers/users-router.js';
 import errorMiddleware from "./middlewares/error-middleware.js";
+import router from "./routers/roles-router.js";
+import rolesRouter from "./routers/roles-router.js";
 
 dotenv.config();
 
@@ -28,6 +30,7 @@ const app = express()
         next();
     })
     .use('/users', usersRouter)
+    .use('/roles', rolesRouter)
     .use(errorMiddleware);
 
 const startServer = async () => {
