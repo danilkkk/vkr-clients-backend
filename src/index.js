@@ -31,7 +31,7 @@ const app = express()
     .use(errorMiddleware);
 
 const startServer = async () => {
-    const start = performance.now();
+    const start = Date.now();
 
     try {
         logger.info('Starting server...');
@@ -48,7 +48,7 @@ const startServer = async () => {
             }
         });
 
-        app.listen(PORT, () => logger.info(`Server was started on port ${PORT} in ${(performance.now() - start).toFixed(2)} ms`));
+        app.listen(PORT, () => logger.info(`Server was started on port ${PORT} in ${(Date.now() - start).toFixed(2)} ms`));
     } catch (e) {
         logger.error(e);
     }
