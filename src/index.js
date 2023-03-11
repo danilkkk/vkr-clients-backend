@@ -15,13 +15,18 @@ const PORT = process.env.PORT ?? 5005;
 const DATABASE_URI = process.env.DB_URL ?? `mongodb://localhost:27017`;
 const DB_NAME = process.env.DB_NAME ?? 'clients';
 
+// .use(cors({
+//     credentials: true,
+//     origin: process.env.CLIENT_URL
+// }))
 const app = express()
     .use(express.json())
     .use(cookieParser())
-    .use(cors({
-        credentials: true,
-        origin: process.env.CLIENT_URL
-    }))
+    .use((req, res, next) => {
+        res.header("Access-Control-Allow-Origin", "*");
+        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+        next();
+    })
     .use('/users', usersRouter)
     .use(errorMiddleware);
 
