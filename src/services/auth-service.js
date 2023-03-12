@@ -65,7 +65,7 @@ class AuthService {
     }
 
     async login(email, phone, password) {
-        const userDocument = await this.findUserByEmailOrPhone(email, phone);
+        const userDocument = await usersService.findUserByEmailOrPhone(email, phone);
 
         if (!userDocument) {
             throw ApiError.BadRequest(`A user with an email ${email} not found`)
