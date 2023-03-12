@@ -8,13 +8,13 @@ import UserModel from "../models/user-model.js";
 import ApiError from "../exceptions/api-error.js";
 import Roles from "../models/role-model.js";
 import dotenv from "dotenv";
+import usersService from "./users-service.js";
 
 dotenv.config();
 
 const PASSWORD_SALT = Number(process.env.PASSWORD_SAULT || 5);
 
 class AuthService {
-
     async resetPassword(email) {
         const userDocument = await userModel.findOne({ email }).exec();
 
@@ -32,9 +32,11 @@ class AuthService {
     }
 
     async registration(name, surname, email, phone, originalPassword) {
-        const candidate = await userModel.findOne({ email }).exec();
+        const candidate = await usersService.findUserByEmailOrPhone(email, phone);
 
-        if (candidate) {
+        const unregistered = candidate && candidate.roles && candidate.roles.includes(Roles.UNREGISTERED.name);
+
+        if (candidate && !unregistered) {
             throw ApiError.BadRequest(`Email address ${email} is already in use`);
         }
 
@@ -42,15 +44,28 @@ class AuthService {
 
         const activationLink = v4();
 
-        const userDocument = await userModel.create({ name, surname, email, phone, password, activationLink, roles: [Roles.USER] });
+        let userDocument;
+
+        if (unregistered) {
+            candidate.password = password;
+            candidate.activationLink = activationLink;
+            if (!candidate.roles.includes(Roles.USER.name)) {
+                candidate.roles.push(Roles.USER.name);
+            }
+            candidate.roles = candidate.roles.filter(r => r !== Roles.UNREGISTERED.name);
+            await candidate.save();
+            userDocument = candidate;
+        } else {
+            userDocument = await userModel.create({ name, surname, email, phone, password, activationLink, roles: [Roles.USER.name] });
+        }
 
         await mailService.sendActivationLink(email, name, `${process.env.API_URL}/auth/activate/${activationLink}`);
 
         return await getUserWithTokens(userDocument)
     }
 
-    async login(email, password) {
-        const userDocument = await UserModel.findOne({ email }).exec();
+    async login(email, phone, password) {
+        const userDocument = await this.findUserByEmailOrPhone(email, phone);
 
         if (!userDocument) {
             throw ApiError.BadRequest(`A user with an email ${email} not found`)

@@ -1,14 +1,12 @@
 import userModel from '../models/user-model.js';
 import bcrypt from 'bcrypt';
-import { v4 } from 'uuid';
-import mailService from './mail-service.js';
-import tokenService from './token-service.js';
 import UserDto from '../dtos/user-dto.js';
 import UserModel from "../models/user-model.js";
 import ApiError from "../exceptions/api-error.js";
-import Roles from "../models/role-model.js";
 import chunkedData from "../utils/chunked-data.js";
 import dotenv from "dotenv";
+import Roles from "../models/role-model.js";
+import rolesService from "./roles-service.js";
 
 dotenv.config();
 
@@ -16,12 +14,50 @@ const PASSWORD_SALT = Number(process.env.PASSWORD_SAULT || 5);
 
 class UsersService {
 
-    async createUser(name, surname, email, roles) {
-        const candidate = await userModel.findOne({ email }).exec();
+    async findUserByEmailOrPhone(email, phone) {
+        const pipeline = {
+            $or: []
+        }
+
+        if (email) {
+            pipeline.$or.push({
+                'email': email
+            })
+        }
+
+        if (phone) {
+            pipeline.$or.push({
+                'phone': phone
+            })
+        }
+
+        return await UserModel.findOne(pipeline).exec();
+    }
+
+    async createUser(currentUser, name, surname, email, phone, roles = [Roles.UNREGISTERED.name]) {
+        const candidate = await this.findUserByEmailOrPhone(email, phone);
 
         if (candidate) {
-            throw ApiError.BadRequest(`Email address ${email} is already in use`);
+            throw ApiError.BadRequest(`Email address or phone is already in use`);
         }
+
+        rolesService.hasMorePriority(currentUser, roles);
+
+        if (!roles.find(roleName => roleName === Roles.UNREGISTERED.name)) {
+            roles.push(Roles.UNREGISTERED.name);
+        }
+
+        const userDocument = await userModel.create({ name, surname, email, phone, roles });
+
+        return UserDto.Convert(userDocument);
+    }
+
+    async deleteUserById(currentUser, id) {
+        const userDocument = await getUserDocumentById(id);
+
+        rolesService.hasMorePriority(currentUser, userDocument.roles);
+
+        await userDocument.delete();
     }
 
     async getAllUsers(from, count) {
@@ -29,21 +65,14 @@ class UsersService {
     }
 
     async getUserById(id) {
-        const userDocument = await userModel.findById(id).exec();
-
-        if (!userDocument) {
-            throw ApiError.NotFound(`User with id ${id} does not exist`);
-        }
-
+        const userDocument = await getUserDocumentById(id);
         return UserDto.Convert(userDocument);
     }
 
-    async editUserById(id, changes) {
-        const userDocument = await userModel.findById(id).exec();
+    async editUserById(currentUser, id, changes) {
+        const userDocument = await getUserDocumentById(id);
 
-        if (!userDocument) {
-            throw ApiError.NotFound(`User with id ${id} does not exist`);
-        }
+        rolesService.hasMorePriority(currentUser, userDocument.roles);
 
         const { name, surname, isActivated, email, phone, password: originalPassword, roles } = changes;
 
@@ -55,8 +84,6 @@ class UsersService {
             }
         }
 
-        console.log(PASSWORD_SALT);
-
         const password = originalPassword ? await bcrypt.hash(originalPassword, PASSWORD_SALT) : undefined;
 
         await userModel.findByIdAndUpdate(id, { name, surname, isActivated, email, phone, password, roles }).exec();
@@ -65,6 +92,20 @@ class UsersService {
 
         return UserDto.Convert(newUserDocument);
     }
+}
+
+async function getUserDocumentById(id) {
+    const userDocument = await getUserDocumentByIdSafe(id);
+
+    if (!userDocument) {
+        throw ApiError.NotFound(`User with id ${id} does not exist`);
+    }
+
+    return userDocument;
+}
+
+async function getUserDocumentByIdSafe(id) {
+    return await userModel.findById(id).exec();
 }
 
 export default new UsersService()

@@ -34,6 +34,12 @@ const app = express()
     .use('/roles', rolesRouter)
     .use(errorMiddleware);
 
+app.response.getCurrentUser = function () {
+    console.log('getCurrentUser');
+    console.log(this.locals.currentUser);
+    return this.locals.currentUser;
+}
+
 const startServer = async () => {
     const start = Date.now();
 

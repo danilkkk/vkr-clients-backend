@@ -1,17 +1,21 @@
 import Router from 'express';
 
 import usersController from "../controllers/users-controller.js";
+import createRoleMiddleware from "../middlewares/auth-middleware.js";
+import Roles from "../models/role-model.js";
 
 const router = new Router();
 
-router.delete('/delete', usersController.getAllUsers /*.deleteById*/);
+const accessMiddleware = createRoleMiddleware(Roles.SELF_EMPLOYED_SPEC, Roles.ADMINISTRATOR, Roles.SUPERUSER);
 
-router.post('/create', usersController.getAllUsers /*.create*/);
+router.post('/create', accessMiddleware, usersController.createUser);
 
-router.patch('/edit/:id', usersController.editUserById /*.editUser*/);
+router.get('/', accessMiddleware, usersController.getAllUsers);
 
-router.get('/:id', usersController.getUserById);
+router.get('/:id', createRoleMiddleware([Roles.USER]), usersController.getUserById);
 
-router.get('/', usersController.getAllUsers);
+router.patch('/:id/edit', accessMiddleware, usersController.editUserById);
+
+router.delete('/:id/delete', accessMiddleware, usersController.deleteUserById);
 
 export default router;

@@ -46,9 +46,9 @@ class AuthController {
 
     async login(req, res, next) {
         try {
-            const { email, password } = req.body;
+            const { email, phone, password } = req.body;
 
-            const user = await authService.login(email, password);
+            const user = await authService.login(email, phone, password);
 
             res.cookie('refreshToken', user.refreshToken, {
                 // 30 days
