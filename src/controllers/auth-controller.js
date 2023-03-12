@@ -31,12 +31,7 @@ class AuthController {
             const { name, surname, email, phone, password } = req.body;
             const user = await authService.registration(name, surname, email, phone, password);
 
-            res.cookie('refreshToken', user.refreshToken, {
-                // 30 days
-                maxAge: 30 * 24 * 60 * 60 * 1000,
-                httpOnly: true,
-                // secure: true,
-            })
+            saveRefreshTokenToCookie(res, user.refreshToken);
 
             return res.json(user);
         } catch (e) {
@@ -50,12 +45,7 @@ class AuthController {
 
             const user = await authService.login(email, phone, password);
 
-            res.cookie('refreshToken', user.refreshToken, {
-                // 30 days
-                maxAge: 30 * 24 * 60 * 60 * 1000,
-                httpOnly: true,
-                // secure: true,
-            })
+            saveRefreshTokenToCookie(res, user.refreshToken);
 
             return res.json(user);
         } catch (e) {
@@ -103,28 +93,22 @@ class AuthController {
             const { refreshToken } = req.cookies;
             const user = await authService.refresh(refreshToken);
 
-            res.cookie('refreshToken', user.refreshToken, {
-                // 30 days
-                maxAge: 30 * 24 * 60 * 60 * 1000,
-                httpOnly: true,
-                // secure: true,
-            })
+            saveRefreshTokenToCookie(res, user.refreshToken);
 
             return res.json(user);
         } catch (e) {
             next(e);
         }
     }
+}
 
-    // async getUsers(req, res, next) {
-    //     try {
-    //         const userDocuments = await authService.getUsers();
-    //
-    //         return res.json(UserDto.ConvertMany(userDocuments));
-    //     } catch (e) {
-    //         next(e);
-    //     }
-    // }
+function saveRefreshTokenToCookie(res, refreshToken) {
+    res.cookie('refreshToken', refreshToken, {
+        // 30 days
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        httpOnly: true,
+        // secure: true,
+    })
 }
 
 export default new AuthController();

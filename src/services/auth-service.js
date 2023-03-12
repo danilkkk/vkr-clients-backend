@@ -74,7 +74,7 @@ class AuthService {
         const isPassEquals = await bcrypt.compare(password, userDocument.password);
 
         if (!isPassEquals) {
-            return ApiError.BadRequest('Неверный пароль');
+            throw ApiError.BadRequest('Неверный пароль');
         }
 
         return await getUserWithTokens(userDocument);

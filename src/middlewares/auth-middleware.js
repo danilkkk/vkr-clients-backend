@@ -18,8 +18,6 @@ export default function createRoleMiddleware(...roles) {
 
             const userData = tokenService.validateAccessToken(accessToken);
 
-            console.log(userData);
-
             if (!userData) {
                 return next(ApiError.UnauthorizedError())
             }

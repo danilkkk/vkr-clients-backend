@@ -17,7 +17,7 @@ class RolesService {
 
     getCurrentUserRoles(currentUser) {
         if (!currentUser) {
-            return ApiError.AccessForbidden();
+            throw ApiError.AccessForbidden();
         }
 
         return this.getRolesByNames(currentUser.roles);
@@ -27,7 +27,7 @@ class RolesService {
         const currentUserRoles = this.getCurrentUserRoles(currentUser);
 
         if (currentUserRoles.length === 0) {
-            return ApiError.AccessForbidden();
+            throw ApiError.AccessForbidden();
         }
 
         const otherRoles = this.getRolesByNames(otherRoleNames);
@@ -40,7 +40,7 @@ class RolesService {
            return true;
         }
 
-        return ApiError.AccessForbidden();
+        throw ApiError.AccessForbidden();
     }
 
     hasPermission(currentUser, requiredRole = Roles.UNREGISTERED) {
@@ -51,7 +51,7 @@ class RolesService {
         const currentUserRoles = this.getCurrentUserRoles(currentUser);
 
         if (currentUserRoles.length === 0) {
-            return ApiError.AccessForbidden();
+            throw ApiError.AccessForbidden();
         }
 
         const highestCurrentUserRole = currentUserRoles[0];
@@ -60,7 +60,7 @@ class RolesService {
             return true;
         }
 
-        return ApiError.AccessForbidden();
+        throw ApiError.AccessForbidden();
     }
 
     sortRolesDesc(roles) {
