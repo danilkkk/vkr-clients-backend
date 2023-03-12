@@ -10,7 +10,7 @@ import Roles from "../models/role-model.js";
 
 const PASSWORD_SALT = 5;
 
-class UsersService {
+class AuthService {
 
     async createUser(name, surname, email, roles) {
         const candidate = await userModel.findOne({ email }).exec();
@@ -92,9 +92,9 @@ class UsersService {
         await user.save();
     }
 
-    async getUsers() {
-        return await UserModel.find().exec();
-    }
+    // async getUsers() {
+    //     return await UserModel.find().exec();
+    // }
 }
 
 async function getUserWithTokens(userDocument) {
@@ -111,4 +111,4 @@ async function getUserWithTokens(userDocument) {
     }
 }
 
-export default new UsersService()
+export default new AuthService()

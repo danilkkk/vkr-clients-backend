@@ -1,4 +1,4 @@
-import usersService from '../services/users-service.js';
+import authService from '../services/auth-service.js';
 import dotenv from 'dotenv';
 import { validationResult } from "express-validator";
 import ApiError from "../exceptions/api-error.js";
@@ -6,7 +6,7 @@ import UserDto from "../dtos/user-dto.js";
 
 dotenv.config();
 
-class UserController {
+class AuthController {
 
     async registration(req, res, next) {
         try {
@@ -17,7 +17,7 @@ class UserController {
             }
 
             const { name, surname, email, password } = req.body;
-            const user = await usersService.registration(name, surname, email, password);
+            const user = await authService.registration(name, surname, email, password);
 
             res.cookie('refreshToken', user.refreshToken, {
                 // 30 days
@@ -36,7 +36,7 @@ class UserController {
         try {
             const { email, password } = req.body;
 
-            const user = await usersService.login(email, password);
+            const user = await authService.login(email, password);
 
             res.cookie('refreshToken', user.refreshToken, {
                 // 30 days
@@ -55,7 +55,7 @@ class UserController {
         try {
             const { refreshToken } = req.cookies;
 
-            await usersService.logout(refreshToken);
+            await authService.logout(refreshToken);
 
             res.clearCookie('refreshToken');
 
@@ -68,7 +68,7 @@ class UserController {
     async activate(req, res, next) {
         try {
             const link = req.params.link;
-            await usersService.activate(link);
+            await authService.activate(link);
             return res.redirect(process.env.CLIENT_URL);
         } catch (e) {
             next(e);
@@ -78,7 +78,7 @@ class UserController {
     async refresh(req, res, next) {
         try {
             const { refreshToken } = req.cookies;
-            const user = await usersService.refresh(refreshToken);
+            const user = await authService.refresh(refreshToken);
 
             res.cookie('refreshToken', user.refreshToken, {
                 // 30 days
@@ -93,15 +93,15 @@ class UserController {
         }
     }
 
-    async getUsers(req, res, next) {
-        try {
-            const userDocuments = await usersService.getUsers();
-
-            return res.json(UserDto.ConvertMany(userDocuments));
-        } catch (e) {
-            next(e);
-        }
-    }
+    // async getUsers(req, res, next) {
+    //     try {
+    //         const userDocuments = await authService.getUsers();
+    //
+    //         return res.json(UserDto.ConvertMany(userDocuments));
+    //     } catch (e) {
+    //         next(e);
+    //     }
+    // }
 }
 
-export default new UserController();
+export default new AuthController();

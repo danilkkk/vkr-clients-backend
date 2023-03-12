@@ -6,9 +6,8 @@ import mongoose from 'mongoose';
 
 import logger from './logger.js';
 
-import usersRouter from './routers/users-router.js';
+import authRouter from './routers/auth-router.js';
 import errorMiddleware from "./middlewares/error-middleware.js";
-import router from "./routers/roles-router.js";
 import rolesRouter from "./routers/roles-router.js";
 
 dotenv.config();
@@ -29,7 +28,7 @@ const app = express()
         res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
         next();
     })
-    .use('/users', usersRouter)
+    .use('/auth', authRouter)
     .use('/roles', rolesRouter)
     .use(errorMiddleware);
 
