@@ -1,15 +1,10 @@
 import { Schema, model } from 'mongoose';
 
-const UserSchema = new Schema({
+const ServiceSchema = new Schema({
     name: { type: String, required: true },
-    surname: { type: String, required: false },
-    email: { type: String, unique: true, required: true },
-    phone: { type: String, unique: true, required: false },
-    password: { type: String, required: false },
-    isActivated: { type: Boolean, default: false },
-    activationLink: { type: String },
-    resetPasswordLink: { type: String, required: false },
-    roles: [{ type: String }],
+    info: { type: String, required: false },
+    cost: { type: Number, required: false },
+    duration: { type: Number, required: false }, // ms
 })
 
-export default model('User', UserSchema, 'users');
+export default model('Service', ServiceSchema, 'services');
