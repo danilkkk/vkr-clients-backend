@@ -77,7 +77,7 @@ class AuthService {
             return ApiError.BadRequest('Неверный пароль');
         }
 
-        return await getUserWithTokens(userDocument)
+        return await getUserWithTokens(userDocument);
     }
 
     async logout(refreshToken) {
