@@ -8,5 +8,5 @@ export default function (err, req, res, next) {
         return res.status(status).json({ message, errors })
     }
 
-    return res.status(500).json({ message: 'Произошла непредвиденная ошибка' })
+    return res.status(500).json({ message: 'Произошла непредвиденная ошибка', error: err.message })
 }

@@ -9,6 +9,7 @@ import logger from './logger.js';
 import authRouter from './routers/auth-router.js';
 import errorMiddleware from "./middlewares/error-middleware.js";
 import rolesRouter from "./routers/roles-router.js";
+import usersRouter from "./routers/users-router.js";
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ const app = express()
         next();
     })
     .use('/auth', authRouter)
+    .use('/users', usersRouter)
     .use('/roles', rolesRouter)
     .use(errorMiddleware);
 

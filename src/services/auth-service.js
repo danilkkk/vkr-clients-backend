@@ -7,20 +7,31 @@ import UserDto from '../dtos/user-dto.js';
 import UserModel from "../models/user-model.js";
 import ApiError from "../exceptions/api-error.js";
 import Roles from "../models/role-model.js";
+import dotenv from "dotenv";
 
-const PASSWORD_SALT = 5;
+dotenv.config();
+
+const PASSWORD_SALT = Number(process.env.PASSWORD_SAULT || 5);
 
 class AuthService {
 
-    async createUser(name, surname, email, roles) {
-        const candidate = await userModel.findOne({ email }).exec();
+    async resetPassword(email) {
+        const userDocument = await userModel.findOne({ email }).exec();
 
-        if (candidate) {
-            throw ApiError.BadRequest(`Email address ${email} is already in use`);
+        if (!userDocument) {
+            throw ApiError.BadRequest(`User with email ${email} does not exist`);
         }
+
+        const resetPasswordLink = v4();
+
+        userDocument.resetPasswordLink = resetPasswordLink;
+
+        await mailService.sendResetPasswordLink(email, userDocument.name, `${process.env.CLIENT_URL}/reset/${resetPasswordLink}`);
+
+        await userDocument.save();
     }
 
-    async registration(name, surname, email, originalPassword) {
+    async registration(name, surname, email, phone, originalPassword) {
         const candidate = await userModel.findOne({ email }).exec();
 
         if (candidate) {
@@ -31,9 +42,9 @@ class AuthService {
 
         const activationLink = v4();
 
-        const userDocument = await userModel.create({ name, surname, email, password, activationLink, roles: [Roles.USER] });
+        const userDocument = await userModel.create({ name, surname, email, phone, password, activationLink, roles: [Roles.USER] });
 
-        await mailService.sendActivationLink(email, name, `${process.env.API_URL}/users/activate/${activationLink}`);
+        await mailService.sendActivationLink(email, name, `${process.env.API_URL}/auth/activate/${activationLink}`);
 
         return await getUserWithTokens(userDocument)
     }
@@ -92,9 +103,17 @@ class AuthService {
         await user.save();
     }
 
-    // async getUsers() {
-    //     return await UserModel.find().exec();
-    // }
+    async changePasswordByLink(resetPasswordLink, newPassword) {
+        const user = await UserModel.findOne({ resetPasswordLink }).exec();
+
+        if (!user) {
+            throw ApiError.BadRequest('Invalid reset link');
+        }
+
+        user.resetPasswordLink = null;
+        user.password = await bcrypt.hash(newPassword, PASSWORD_SALT);
+        await user.save();
+    }
 }
 
 async function getUserWithTokens(userDocument) {

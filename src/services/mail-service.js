@@ -20,12 +20,7 @@ class MailService {
     }
 
     async sendActivationLink(email, name, link) {
-        const msg = {
-            from: `${process.env.SMTP_USER}`,
-            to: email,
-            subject: `Активируйте свой аккаунт ${process.env.API_URL}`,
-            text: '',
-            html: `
+        const html = `
             <div>
             <h1>${name},</h1>
             
@@ -36,7 +31,41 @@ class MailService {
             <div style="text-align: right"><i>C уважением,<i></div>
             <div style="text-align: right"><i>команда предприятия<i></div>
             <div>
-            `
+            `;
+
+        const subject = `Активируйте свой аккаунт ${process.env.API_URL}`;
+
+        await this.sendMail(email, subject, html)
+    }
+
+    async sendResetPasswordLink(email, name, link) {
+        const html = `
+            <div>
+            <h1>${name},</h1>
+            
+            <h4>Для смены пароля перейдите по ссылке <a href="${link}">cссылке</a></h4>
+            
+            <p>Если Вы не запрашивали смену пароля, игнорируйте это письмо</p>
+            
+            <a href="${link}">${link}</a>
+            
+            <div style="text-align: right"><i>C уважением,<i></div>
+            <div style="text-align: right"><i>команда предприятия<i></div>
+            <div>
+            `;
+
+        const subject = `Смена пароля ${process.env.API_URL}`;
+
+        await this.sendMail(email, subject, html)
+    }
+
+    async sendMail(to, subject, html) {
+        const msg = {
+            from: `${process.env.SMTP_USER}`,
+            to,
+            subject,
+            text: '',
+            html
         };
 
         this.transporter.sendMail(msg , err => {

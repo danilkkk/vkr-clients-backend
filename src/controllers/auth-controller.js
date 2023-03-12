@@ -8,6 +8,18 @@ dotenv.config();
 
 class AuthController {
 
+    async resetPassword(req, res, next) {
+        try {
+            const { email } = req.body;
+
+            await authService.resetPassword(email);
+
+            return res.json();
+        } catch (e) {
+            next(e);
+        }
+    }
+
     async registration(req, res, next) {
         try {
             const errors = validationResult(req);
@@ -16,8 +28,8 @@ class AuthController {
                 return next(ApiError.BadRequest('Ошибка валидации', errors.array()))
             }
 
-            const { name, surname, email, password } = req.body;
-            const user = await authService.registration(name, surname, email, password);
+            const { name, surname, email, phone, password } = req.body;
+            const user = await authService.registration(name, surname, email, phone, password);
 
             res.cookie('refreshToken', user.refreshToken, {
                 // 30 days
@@ -70,6 +82,17 @@ class AuthController {
             const link = req.params.link;
             await authService.activate(link);
             return res.redirect(process.env.CLIENT_URL);
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    async changePasswordByLink(req, res, next) {
+        try {
+            const link = req.params.link;
+            const newPassword = req.body.password;
+            await authService.changePasswordByLink(link, newPassword);
+            return res.json();
         } catch (e) {
             next(e);
         }
