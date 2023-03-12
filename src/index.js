@@ -1,6 +1,5 @@
 import express from 'express';
 import dotenv from 'dotenv';
-import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
 
@@ -17,10 +16,6 @@ const PORT = process.env.PORT || 5005;
 const DATABASE_URI = process.env.DB_URL || `mongodb://localhost:27017`;
 const DB_NAME = process.env.DB_NAME || 'clients';
 
-// .use(cors({
-//     credentials: true,
-//     origin: process.env.CLIENT_URL
-// }))
 const app = express()
     .use(express.json())
     .use(cookieParser())
@@ -40,6 +35,8 @@ app.response.getCurrentUser = function () {
     return this.locals.currentUser;
 }
 
+let server;
+
 const startServer = async () => {
     const start = Date.now();
 
@@ -58,10 +55,28 @@ const startServer = async () => {
             }
         });
 
-        app.listen(PORT, () => logger.info(`Server was started on port ${PORT} in ${(Date.now() - start).toFixed(2)} ms`));
+        server = app.listen(PORT, () => logger.info(`Server was started on port ${PORT} in ${(Date.now() - start).toFixed(2)} ms`));
     } catch (e) {
         logger.error(e);
     }
 }
 
 startServer();
+
+const cleanUp = () => {
+    logger.info('Stopping the server...');
+
+    if (server) {
+        server.close(() => {
+            logger.info('Server is stopped.');
+
+            mongoose.connection.close(false, () => {
+                logger.info('Connection to MongoDB is closed.');
+                process.exit(0);
+            });
+        });
+    }
+}
+
+process.on('SIGTERM', cleanUp);
+process.on('SIGINT', cleanUp);
