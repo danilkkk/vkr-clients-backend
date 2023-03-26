@@ -23,14 +23,18 @@ class RolesService {
         return this.getRolesByNames(currentUser.roles);
     }
 
-    hasMorePriority(currentUser, otherRoleNames = [Roles.UNREGISTERED.name]) {
+    checkIfHasMorePriority(currentUser, otherUserRoleNames = [Roles.UNREGISTERED.name], minRole) {
         const currentUserRoles = this.getCurrentUserRoles(currentUser);
 
         if (currentUserRoles.length === 0) {
             throw ApiError.AccessForbidden();
         }
 
-        const otherRoles = this.getRolesByNames(otherRoleNames);
+        if (minRole && currentUserRoles[0].priority < minRole.priority) {
+            throw ApiError.AccessForbidden();
+        }
+
+        const otherRoles = this.getRolesByNames(otherUserRoleNames);
 
         if (otherRoles.length === 0) {
             return true;
@@ -42,6 +46,18 @@ class RolesService {
 
         throw ApiError.AccessForbidden();
     }
+
+    // checkIfHasMorePriorityOrItIsTheSameUser(currentUser, otherUser) {
+    //     if (!otherUser) {
+    //         return true;
+    //     }
+    //
+    //     if (currentUser && currentUser.id === otherUser.id) {
+    //         return true;
+    //     }
+    //
+    //     return this.checkIfHasMorePriority(currentUser, otherUser.roles)
+    // }
 
     hasPermission(currentUser, requiredRole = Roles.UNREGISTERED) {
         if (!requiredRole) {

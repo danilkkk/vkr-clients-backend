@@ -18,6 +18,10 @@ export default class UserDto {
     }
 
     static Convert(userDocument) {
+        if (!userDocument) {
+            return undefined;
+        }
+
         return new UserDto(userDocument);
     }
 

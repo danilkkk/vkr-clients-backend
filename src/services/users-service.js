@@ -7,12 +7,18 @@ import chunkedData from "../utils/chunked-data.js";
 import dotenv from "dotenv";
 import Roles from "../models/role-model.js";
 import rolesService from "./roles-service.js";
+import mailService from "./mail-service.js";
+import { v4 } from "uuid";
 
 dotenv.config();
 
 const PASSWORD_SALT = Number(process.env.PASSWORD_SAULT || 5);
 
 class UsersService {
+
+    itIsTheSameUser(userFrom, userTo) {
+        return userFrom.id === userTo.id;
+    }
 
     async findUserByEmailOrPhone(email, phone) {
         const pipeline = {
@@ -41,7 +47,7 @@ class UsersService {
             throw ApiError.BadRequest(`Email address or phone is already in use`);
         }
 
-        rolesService.hasMorePriority(currentUser, roles);
+        rolesService.checkIfHasMorePriority(currentUser, roles);
 
         if (!roles.find(roleName => roleName === Roles.UNREGISTERED.name)) {
             roles.push(Roles.UNREGISTERED.name);
@@ -55,7 +61,7 @@ class UsersService {
     async deleteUserById(currentUser, id) {
         const userDocument = await getUserDocumentById(id);
 
-        rolesService.hasMorePriority(currentUser, userDocument.roles);
+        rolesService.checkIfHasMorePriority(currentUser, userDocument.roles);
 
         await userDocument.delete();
     }
@@ -72,9 +78,16 @@ class UsersService {
     async editUserById(currentUser, id, changes) {
         const userDocument = await getUserDocumentById(id);
 
-        rolesService.hasMorePriority(currentUser, userDocument.roles);
+        const itIsTheSameUser = this.itIsTheSameUser(currentUser, UserDto.Convert(userDocument));
 
-        const { name, surname, isActivated, email, phone, password: originalPassword, roles } = changes;
+        if (!itIsTheSameUser) {
+            rolesService.checkIfHasMorePriority(currentUser, userDocument.roles, Roles.SELF_EMPLOYED_SPEC);
+        }
+
+        const { name, surname, isActivated: isActivated0, email, phone, password: originalPassword, roles } = changes;
+
+        let isActivated = isActivated0;
+        let activationLink = userDocument.activationLink;
 
         if (email) {
             const candidate = await userModel.findOne({ email }).exec();
@@ -82,13 +95,27 @@ class UsersService {
             if (candidate) {
                 throw ApiError.BadRequest(`Email address ${email} is already in use`);
             }
+
+            if (itIsTheSameUser) {
+                isActivated = false;
+                activationLink = v4();
+                await mailService.sendActivationLink(email, name || userDocument.name, activationLink)
+            }
         }
 
-        const password = originalPassword ? await bcrypt.hash(originalPassword, PASSWORD_SALT) : undefined;
+        if (phone) {
+            const candidate = await userModel.findOne({ phone }).exec();
 
-        await userModel.findByIdAndUpdate(id, { name, surname, isActivated, email, phone, password, roles }).exec();
+            if (candidate) {
+                throw ApiError.BadRequest(`Phone number ${phone} is already in use`);
+            }
+        }
 
-        const newUserDocument = await userModel.findById(id).exec();
+        const password = originalPassword ? await bcrypt.hash(originalPassword, PASSWORD_SALT) : userDocument.password;
+
+        await userModel.findByIdAndUpdate(id, { name, surname, isActivated, email, phone, password, roles, activationLink }).exec();
+
+        const newUserDocument = await getUserDocumentById(id);
 
         return UserDto.Convert(newUserDocument);
     }
