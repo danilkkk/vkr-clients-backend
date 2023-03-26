@@ -22,11 +22,11 @@ class UsersController {
 
     async createUser(req, res, next) {
         try {
-            const { name, surname, email, phone, roles } = req.body;
+            const { name, surname, email, phone, roles, officeId } = req.body;
 
             const currentUser = res.getCurrentUser();
 
-            const users = await usersService.createUser(currentUser, name, surname, email, phone, roles);
+            const users = await usersService.createUser(currentUser, name, surname, email, phone, roles, officeId);
 
             return res.json(users);
         } catch (e) {

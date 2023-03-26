@@ -40,7 +40,7 @@ class UsersService {
         return await UserModel.findOne(pipeline).exec();
     }
 
-    async createUser(currentUser, name, surname, email, phone, roles = [Roles.UNREGISTERED.name]) {
+    async createUser(currentUser, name, surname, email, phone, roles = [Roles.UNREGISTERED.name], officeId) {
         const candidate = await this.findUserByEmailOrPhone(email, phone);
 
         if (candidate) {
@@ -84,7 +84,7 @@ class UsersService {
             rolesService.checkIfHasMorePriority(currentUser, userDocument.roles, Roles.SELF_EMPLOYED_SPEC);
         }
 
-        const { name, surname, isActivated: isActivated0, email, phone, password: originalPassword, roles } = changes;
+        const { name, surname, isActivated: isActivated0, email, phone, password: originalPassword, roles, officeId } = changes;
 
         let isActivated = isActivated0;
         let activationLink = userDocument.activationLink;

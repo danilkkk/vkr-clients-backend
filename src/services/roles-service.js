@@ -59,7 +59,7 @@ class RolesService {
     //     return this.checkIfHasMorePriority(currentUser, otherUser.roles)
     // }
 
-    hasPermission(currentUser, requiredRole = Roles.UNREGISTERED) {
+    checkPermission(currentUser, requiredRole = Roles.UNREGISTERED) {
         if (!requiredRole) {
             return true;
         }

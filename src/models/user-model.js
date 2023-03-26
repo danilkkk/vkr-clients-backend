@@ -9,6 +9,7 @@ const UserSchema = new Schema({
     isActivated: { type: Boolean, default: false },
     activationLink: { type: String },
     resetPasswordLink: { type: String, required: false },
+    officeId: { type: Schema.Types.ObjectId, required: false, Ref: 'Office' },
     roles: [{ type: String }],
 })
 

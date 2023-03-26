@@ -7,6 +7,7 @@ export default class UserDto {
     isActivated;
     roles;
 
+    // TODO добавить офис (через populate)
     constructor({ _id, email, phone, name, surname, isActivated, roles }) {
         this.id = _id;
         this.email = email;

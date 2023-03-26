@@ -9,11 +9,12 @@ import authRouter from './routers/auth-router.js';
 import errorMiddleware from "./middlewares/error-middleware.js";
 import rolesRouter from "./routers/roles-router.js";
 import usersRouter from "./routers/users-router.js";
+import officesRouter from "./routers/offices-router.js";
 
 dotenv.config();
 
 const PORT = process.env.PORT || 5005;
-const DATABASE_URI = process.env.DB_URL || `mongodb://localhost:27017`;
+const DATABASE_URI = /*process.env.DB_URL ||*/ `mongodb://localhost:27017`;
 const DB_NAME = process.env.DB_NAME || 'clients';
 
 const app = express()
@@ -27,6 +28,7 @@ const app = express()
     .use('/auth', authRouter)
     .use('/users', usersRouter)
     .use('/roles', rolesRouter)
+    .use('/offices', officesRouter)
     .use(errorMiddleware);
 
 app.response.getCurrentUser = function () {
