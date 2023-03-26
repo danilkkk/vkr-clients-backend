@@ -1,7 +1,7 @@
 import schedulePatternsService from "../services/schedule-patterns-service.js";
 
 
-class OfficesController {
+class SchedulePatternsController {
 
     async getAllPatternsByUser(req, res, next) {
         try {
@@ -71,4 +71,4 @@ class OfficesController {
     }
 }
 
-export default new OfficesController();
+export default new SchedulePatternsController();
