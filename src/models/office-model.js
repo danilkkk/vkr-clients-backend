@@ -7,4 +7,4 @@ const OfficeSchema = new Schema({
     address: { type: String, required: true }
 })
 
-export default model('Office', OfficeSchema, 'offices');
+export default model('OfficeModel', OfficeSchema, 'offices');

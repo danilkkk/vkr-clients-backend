@@ -12,7 +12,11 @@ router.post('/create', accessMiddleware, usersController.createUser);
 
 router.get('/', accessMiddleware, usersController.getAllUsers);
 
+router.post('/:userId/addService', accessMiddleware, usersController.addServiceToSpecialist);
+
 router.get('/:id', createRoleMiddleware([Roles.USER]), usersController.getUserById);
+
+router.get('/:id/services', usersController.getServicesBySpecialist);
 
 router.patch('/:id/edit', accessMiddleware, usersController.editUserById);
 

@@ -14,6 +14,33 @@ class UsersController {
         }
     }
 
+    async addServiceToSpecialist(req, res, next) {
+        try {
+            const { userId } = req.params;
+            const { serviceId } = req.body;
+
+            const currentUser = res.getCurrentUser();
+
+            await usersService.addServiceToSpecialist(currentUser, userId, serviceId);
+
+            return res.send();
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    async getServicesBySpecialist(req, res, next) {
+        try {
+            const { id } = req.params;
+
+            const services = await usersService.getServicesBySpecialist(id);
+
+            return res.json(services);
+        } catch (e) {
+            next(e);
+        }
+    }
+
     async createUser(req, res, next) {
         try {
             const { name, surname, email, phone, roles, officeId } = req.body;

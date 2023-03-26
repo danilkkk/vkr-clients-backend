@@ -12,6 +12,8 @@ router.get('/', officesController.getAllOffices);
 
 router.get('/:id', officesController.getOfficeById);
 
+router.get('/:officeId/users', officesController.getUsersByOffice);
+
 router.post('/create', createAndDeleteMiddleware, officesController.createOffice);
 
 router.delete('/:id', createAndDeleteMiddleware, officesController.deleteOffice);

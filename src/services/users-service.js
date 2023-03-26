@@ -1,6 +1,7 @@
 import userModel from '../models/user-model.js';
 import bcrypt from 'bcrypt';
 import UserDto from '../dtos/user-dto.js';
+import SpecialistDto from "../dtos/specialist-dto.js";
 import UserModel from "../models/user-model.js";
 import ApiError from "../exceptions/api-error.js";
 import chunkedData from "../utils/chunked-data.js";
@@ -9,10 +10,14 @@ import Roles from "../models/role-model.js";
 import rolesService from "./roles-service.js";
 import mailService from "./mail-service.js";
 import { v4 } from "uuid";
+import ServiceSpecialistModel from "../models/service-specialist-model.js";
+import ServiceDto from "../dtos/service-dto.js";
 
 dotenv.config();
 
 const PASSWORD_SALT = Number(process.env.PASSWORD_SAULT || 5);
+
+const SPECIALIST_ROLES = { roles: { $in: [Roles.SPECIALIST.name, Roles.SELF_EMPLOYED_SPEC.name]} };
 
 class UsersService {
 
@@ -65,6 +70,30 @@ class UsersService {
 
         await userDocument.delete();
     }
+
+    async getSpecialistsByOffice(officeId) {
+        const users = await userModel.find({ officeId, ...SPECIALIST_ROLES }).exec();
+        return SpecialistDto.ConvertMany(users);
+    }
+
+    async getSpecialistsByService(serviceId) {
+        const serviceSpecialist = await ServiceSpecialistModel.find({ serviceId }).populate('userId').exec();
+        return SpecialistDto.ConvertMany(serviceSpecialist.map(ss => ss.userId));
+    }
+
+    async getServicesBySpecialist(userId) {
+        const serviceSpecialist = await ServiceSpecialistModel.find({ userId }).populate('serviceId').exec();
+        return ServiceDto.ConvertMany(serviceSpecialist.map(ss => ss.serviceId));
+    }
+
+    async addServiceToSpecialist(currentUser, userId, serviceId) {
+        if (currentUser.roles.indexOf(Roles.SELF_EMPLOYED_SPEC.name) !== -1 && userId !== currentUser.id) {
+            throw ApiError.AccessForbidden();
+        }
+        await ServiceSpecialistModel.create({ userId, serviceId });
+    }
+
+
 
     async getAllUsers(from, count) {
         return await chunkedData(UserModel, UserDto.ConvertMany, 'users', from, count);

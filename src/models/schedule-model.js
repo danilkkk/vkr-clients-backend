@@ -1,10 +1,10 @@
 import { Schema, model } from 'mongoose';
+import SchedulePatternModel from "./schedule-pattern-model.js";
 
 const ScheduleSchema = new Schema({
-    date: { type: Date, required: true, default: new Date() },
-    intervals: [{ from: { type: Date }, to: { type: Date } }],
-    userId: { type: Schema.Types.ObjectId, required: true, Ref: 'User' },
-    officeId: { type: Schema.Types.ObjectId, required: true, Ref: 'Office' },
+    date: { type: String, required: true },
+    userId: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
+    patternId: { type: Schema.Types.ObjectId, required: true, ref: 'SchedulePatternModel' },
 })
 
-export default model('Schedule', ScheduleSchema, 'schedule');
+export default model('ScheduleModel', ScheduleSchema, 'schedule');

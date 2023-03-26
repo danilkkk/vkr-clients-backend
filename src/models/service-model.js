@@ -7,4 +7,4 @@ const ServiceSchema = new Schema({
     duration: { type: Number, required: false }, // ms
 })
 
-export default model('Service', ServiceSchema, 'services');
+export default model('ServiceModel', ServiceSchema, 'services');

@@ -15,6 +15,12 @@ class RolesService {
         return this.getRolesByNames(currentUser.roles);
     }
 
+    getMaxPriorityRole(user) {
+        return this.getCurrentUserRoles(user)
+            .sort((r1, r2) => r1.priority - r2.priority)
+            .pop();
+    }
+
     getCurrentUserRoles(currentUser) {
         if (!currentUser) {
             throw ApiError.AccessForbidden();

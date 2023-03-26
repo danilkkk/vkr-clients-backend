@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import servicesService from "../services/services-service.js";
+import usersService from "../services/users-service.js";
 
 dotenv.config();
 
@@ -21,6 +22,18 @@ class ServicesController {
             const service = await servicesService.getServiceById(id);
 
             return res.json(service);
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    async getSpecialistsByService(req, res, next) {
+        try {
+            const { id } = req.params;
+
+            const specialists = await usersService.getSpecialistsByService(id);
+
+            return res.json(specialists);
         } catch (e) {
             next(e);
         }

@@ -11,6 +11,8 @@ router.get('/', servicesController.getAllServices);
 
 router.get('/:id', servicesController.getServiceById);
 
+router.get('/:id/users', servicesController.getSpecialistsByService);
+
 router.post('/create', permissionMiddleware, servicesController.createService);
 
 router.delete('/:id', permissionMiddleware, servicesController.deleteService);

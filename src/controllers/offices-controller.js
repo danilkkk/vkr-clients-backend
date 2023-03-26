@@ -1,4 +1,5 @@
 import officesService from "../services/offices-service.js";
+import usersService from "../services/users-service.js";
 
 class OfficesController {
 
@@ -19,6 +20,18 @@ class OfficesController {
             const office = await officesService.getOfficeById(id);
 
             return res.json(office);
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    async getUsersByOffice(req, res, next) {
+        try {
+            const { officeId } = req.params;
+
+            const users = await usersService.getSpecialistsByOffice(officeId);
+
+            return res.json(users);
         } catch (e) {
             next(e);
         }
