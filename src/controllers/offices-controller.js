@@ -1,13 +1,11 @@
-import dotenv from 'dotenv';
 import officesService from "../services/offices-service.js";
-
-dotenv.config();
 
 class OfficesController {
 
     async getAllOffices(req, res, next) {
         try {
             const offices = await officesService.getAllOffices();
+
             return res.json(offices);
         } catch (e) {
             next(e);
@@ -28,13 +26,11 @@ class OfficesController {
 
     async createOffice(req, res, next) {
         try {
-            const currentUser = res.getCurrentUser();
-
             const { name, email, phone, address } = req.body;
 
-            const user = await officesService.createOffice(currentUser, name, address, phone, email);
+            const office = await officesService.createOffice(name, address, phone, email);
 
-            return res.json(user);
+            return res.json(office);
         } catch (e) {
             next(e);
         }
@@ -43,9 +39,9 @@ class OfficesController {
     async deleteOffice(req, res, next) {
         try {
             const { id } = req.params;
-            const currentUser = res.getCurrentUser();
 
-            await officesService.deleteOfficeById(currentUser, id);
+            await officesService.deleteOfficeById(id);
+
             return res.json();
         } catch (e) {
             next(e);
@@ -56,8 +52,8 @@ class OfficesController {
         try {
             const { id } = req.params;
             const changes = req.body;
-            const currentUser = res.getCurrentUser();
-            return await officesService.editOfficeById(currentUser, id, changes);
+
+            return await officesService.editOfficeById(id, changes);
         } catch (e) {
             next(e);
         }

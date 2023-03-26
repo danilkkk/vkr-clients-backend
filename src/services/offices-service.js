@@ -1,29 +1,23 @@
 import ApiError from "../exceptions/api-error.js";
-import Roles from "../models/role-model.js";
-import rolesService from "./roles-service.js";
 import OfficeModel from "../models/office-model.js";
 import OfficeDto from "../dtos/office-dto.js";
 
 class OfficesService {
 
-    async createOffice(currentUser, name, address, phone, email) {
-        rolesService.checkPermission(currentUser, Roles.SUPERUSER);
-
+    async createOffice(name, address, phone, email) {
         const officeDocument = await OfficeModel.create({ name, address, phone, email });
 
         return OfficeDto.Convert(officeDocument);
     }
 
-    async deleteOfficeById(currentUser, id) {
-        rolesService.checkPermission(currentUser, Roles.SUPERUSER);
-
+    async deleteOfficeById(id) {
         const officeDocument = await getOfficeDocumentById(id);
 
         await officeDocument.delete();
     }
 
     async getAllOffices() {
-        const officeDocuments = await officeModel.find().exec();
+        const officeDocuments = await OfficeModel.find().exec();
 
         return OfficeDto.ConvertMany(officeDocuments);
     }
@@ -33,12 +27,10 @@ class OfficesService {
         return OfficeDto.Convert(officeDocument);
     }
 
-    async editOfficeById(currentUser, id, changes) {
-        rolesService.checkPermission(currentUser, Roles.ADMINISTRATOR);
-
+    async editOfficeById(id, changes) {
         const { name, email, phone, address } = changes;
 
-        await officeModel.findByIdAndUpdate(id, { name, email, phone, address }).exec();
+        await OfficeModel.findByIdAndUpdate(id, { name, email, phone, address }).exec();
 
         const newOfficeDocument = await getOfficeDocumentById(id);
 
@@ -47,17 +39,17 @@ class OfficesService {
 }
 
 async function getOfficeDocumentById(id) {
-    const userDocument = await getOfficeDocumentByIdSafe(id);
+    const officeDocument = await getOfficeDocumentByIdSafe(id);
 
-    if (!userDocument) {
+    if (!officeDocument) {
         throw ApiError.NotFound(`Office with id ${id} does not exist`);
     }
 
-    return userDocument;
+    return officeDocument;
 }
 
 async function getOfficeDocumentByIdSafe(id) {
-    return await officeModel.findById(id).exec();
+    return await OfficeModel.findById(id).exec();
 }
 
 export default new OfficesService()
