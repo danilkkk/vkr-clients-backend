@@ -31,11 +31,9 @@ class RecordsService {
 
         const scheduleIds = schedulesOnPeriod.map(s => s.id);
 
-        const records = await RecordModel.find({ paid: true, scheduleId: { $in: scheduleIds } }).populate('scheduleId').exec();
+        const records = await RecordModel.find({ paid: true, scheduleId: { $in: scheduleIds } }).exec();
 
-        const sum = records.reduce((sum, current) => sum + current.cost, 0);
-
-        return sum;
+        return records.reduce((sum, current) => sum + current.cost, 0);
     }
 
     async editRecordById(currentUser, clientId, recordId, changes) {
