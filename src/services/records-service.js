@@ -4,7 +4,6 @@ import RecordDto from "../dtos/record-dto.js";
 import recordModel from "../models/record-model.js";
 import servicesService from "./services-service.js";
 import usersService from "./users-service.js";
-import moment from "moment";
 import scheduleService from "./schedule-service.js";
 
 class RecordsService {
@@ -81,83 +80,6 @@ async function getPatternDocumentById(id) {
 
 async function getPatternDocumentByIdSafe(id) {
     return await schedulePatternModel.findById(id).exec();
-}
-
-// function isTheRecordFit(freeIntervals, startTime, duration, endTime = startTime + duration) {
-//     return !!freeIntervals.find(interval => interval.from <= startTime && interval.to >= endTime);
-// }
-//
-// function getAvailableTime(intervals, records, duration) {
-//     return getFreeIntervals(intervals, records)
-//         .filter(interval => interval.duration >= duration);
-// }
-//
-// function getFreeIntervals(intervals, records) {
-//     if (records.length === 0) {
-//         return intervals.map(interval => ({
-//             from: interval.from,
-//             to: interval.to,
-//             duration: interval.to - interval.from,
-//         }));
-//     }
-//
-//     console.log(records);
-//     // преобразуем и сортируем массив записей по возрастанию
-//     records = records.map(r => ({
-//         from: r.startTime,
-//         to: r.startTime + r.duration,
-//     })).sort((r1, r2) => r1.from - r2.from);
-//
-//     console.log(records);
-//
-//     const freeIntervals = [];
-//
-//     let from;
-//     let to;
-//     let duration;
-//
-//     for (let i = 0; i < intervals.length; i++) {
-//         const recordsInCurrentInterval = getRecordsInCurrentInterval(intervals[i], records);
-//
-//         from = intervals[i].from;
-//
-//         for (let j = 0; j < recordsInCurrentInterval.length; j++) {
-//             to = recordsInCurrentInterval[j].from;
-//
-//             duration = to - from;
-//
-//             if (duration > 0) {
-//                 freeIntervals.push({
-//                     from,
-//                     to,
-//                     duration
-//                 })
-//             }
-//
-//             from = recordsInCurrentInterval[j].to;
-//         }
-//
-//         to = intervals[i].to;
-//         duration = to - from;
-//
-//         if (duration > 0) {
-//             freeIntervals.push({
-//                 from,
-//                 to,
-//                 duration
-//             })
-//         }
-//     }
-//
-//     return freeIntervals;
-// }
-//
-// function getRecordsInCurrentInterval(interval, records) {
-//     return records.filter(record => record.from >= interval.from && record.to <= interval.to);
-// }
-
-function dateToString(date) {
-    return moment(date).format('YYYY-MM-DD');
 }
 
 async function checkIfSpecHasService(specId, serviceId) {
