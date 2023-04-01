@@ -7,11 +7,7 @@ const router = new Router();
 
 const permissionMiddleware = createRoleMiddleware(Roles.SELF_EMPLOYED_SPEC, Roles.ADMINISTRATOR, Roles.SUPERUSER);
 
-// router.get('/', permissionMiddleware, scheduleController.getUserSchedule);
-
 router.get('/:userId/default', scheduleController.getDefaultScheduleForDays);
-
-router.get('/:userId/available', scheduleController.getAvailableTime);
 
 router.post('/create', permissionMiddleware, scheduleController.createScheduleOnDay);
 

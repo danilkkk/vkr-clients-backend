@@ -1,4 +1,3 @@
-import scheduleService from "../services/schedule-service.js";
 import recordsService from "../services/records-service.js";
 
 class RecordController {
@@ -17,78 +16,72 @@ class RecordController {
         }
     }
 
+    async editRecordById(req, res, next) {
+        try {
+            const { recordId } = req.params;
+
+            const currentUser = res.getCurrentUser();
+
+            const clientId = req.body.clientId ? req.body.clientId : currentUser.id;
+
+            const record = await recordsService.editRecordById(currentUser, clientId, recordId, req.body)
+
+            return res.json(record);
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    async getClientRecords(req, res, next) {
+        try {
+            const currentUser = res.getCurrentUser();
+
+            const clientId = req.query.clientId ? req.query.clientId : currentUser.id;
+
+            const records = await recordsService.getClientRecords(currentUser, clientId)
+
+            return res.json(records);
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    async getClientRecordsBySpec(req, res, next) {
+        try {
+            const currentUser = res.getCurrentUser();
+
+            const clientId = req.query.clientId ? req.query.clientId : currentUser.id;
+
+            const records = await recordsService.getClientRecordsBySpec(currentUser, clientId, req.query.specId)
+
+            return res.json(records);
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    async deleteRecordById(req, res, next) {
+        try {
+            const { recordId } = req.params;
+
+            const currentUser = res.getCurrentUser();
+
+            const record = await recordsService.deleteRecordById(currentUser, recordId)
+
+            return res.json(record);
+        } catch (e) {
+            next(e);
+        }
+    }
+
     async getAvailableDaysForService(req, res, next) {
         try {
             const { serviceId, from, to } = req.body;
-            const specId = req.params.userId;
+            const { specId } = req.params;
 
             const schedule = await recordsService.getAvailableDaysForService(specId, serviceId, from, to);
 
             return res.json(schedule);
-        } catch (e) {
-            next(e);
-        }
-    }
-
-    async createScheduleOnDays(req, res, next) {
-        try {
-            const { dates, patternId } = req.body;
-
-            const currentUser = res.getCurrentUser();
-
-            const schedule = await scheduleService.createScheduleOnDays(currentUser.id, dates, patternId);
-
-            return res.json(schedule);
-        } catch (e) {
-            next(e);
-        }
-    }
-
-    async deleteScheduleOnDate(req, res, next) {
-        try {
-            const { date } = req.params;
-
-            const currentUser = res.getCurrentUser();
-
-            await scheduleService.deleteScheduleOnDate(currentUser.id, date);
-
-            return res.json();
-        } catch (e) {
-            next(e);
-        }
-    }
-
-    async changePattern(req, res, next) {
-        try {
-            const { date, patternId } = req.body;
-
-            const currentUser = res.getCurrentUser();
-
-            return await scheduleService.changePatternOnDay(currentUser.id, date, patternId);
-        } catch (e) {
-            next(e);
-        }
-    }
-
-    async getDefaultScheduleForDays(req, res, next) {
-        try {
-            const { userId } = req.params;
-            const { dates } = req.body;
-
-            const schedule = await scheduleService.getScheduleForDays(userId, dates);
-            res.json(schedule);
-        } catch (e) {
-            next(e);
-        }
-    }
-
-    async getAvailableTime(req, res, next) {
-        try {
-            const { userId } = req.params;
-            const { dates } = req.body;
-
-            const schedule = await scheduleService.getAvailableTime(userId, dates);
-            res.json(schedule);
         } catch (e) {
             next(e);
         }

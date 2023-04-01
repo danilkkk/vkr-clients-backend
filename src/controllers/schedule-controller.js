@@ -67,18 +67,6 @@ class ScheduleController {
             next(e);
         }
     }
-
-    async getAvailableTime(req, res, next) {
-        try {
-            const { userId } = req.params;
-            const { dates } = req.body;
-
-            const schedule = await scheduleService.getAvailableTime(userId, dates);
-            res.json(schedule);
-        } catch (e) {
-            next(e);
-        }
-    }
 }
 
 export default new ScheduleController();

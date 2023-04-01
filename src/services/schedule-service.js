@@ -22,8 +22,6 @@ class ScheduleService {
 
         const candidate = await getUserScheduleDocumentByDateSafe(userId, date);
 
-        console.log(candidate);
-
         if (candidate) {
             throw ApiError.BadRequest("schedule on this date is already exist. Try to edit it");
         }
@@ -86,9 +84,10 @@ class ScheduleService {
             },
             {
                 '$match': {
+                    'userId': new ObjectId(userId),
                     'convertedDate': {
-                        '$gte': Date.parse(fromStr),
-                        '$lte': Date.parse(toStr)
+                        '$gte': stringToDate(fromStr),
+                        '$lte': stringToDate(toStr)
                     }
                 }
             },
@@ -102,7 +101,7 @@ class ScheduleService {
                 }
         ]
 
-        const schedulesOnPeriod = await ScheduleModel.aggregate(pipeline);
+        const schedulesOnPeriod = await ScheduleModel.aggregate(pipeline).exec();
 
         if (schedulesOnPeriod.length === 0) {
             return []
@@ -110,7 +109,6 @@ class ScheduleService {
 
         const scheduleIds = schedulesOnPeriod.map(s => s._id);
 
-        // надо группировать
         const records = await RecordModel.find({ scheduleId: { $in: scheduleIds } }).populate('scheduleId').exec();
 
         return schedulesOnPeriod.map(scheduleOnDay => {
@@ -124,18 +122,14 @@ class ScheduleService {
         }).filter(date => date.freeIntervals.length);
     }
 
-    async getAvailableTime(userId, date) {
-        const dateAsStr = dateToString(date);
-
-        const schedule = await scheduleModel.find({ userId, date: dateAsStr})
-            .populate('patternId')
-            .exec();
-    }
-
     isTheRecordFit(intervals, otherRecords, startTime, duration, endTime = startTime + duration) {
         const freeIntervals = getFreeIntervals(intervals, otherRecords);
 
         return !!freeIntervals.find(interval => interval.from <= startTime && interval.to >= endTime);
+    }
+
+    isEditedTheRecordFit(intervals, otherRecords, startTime, duration, currentRecordId) {
+        return this.isTheRecordFit(intervals, otherRecords.slice().filter(record => record._id !== currentRecordId), startTime, duration);
     }
 }
 

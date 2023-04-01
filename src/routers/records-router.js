@@ -9,18 +9,16 @@ const router = new Router();
 const permissionMiddleware = createRoleMiddleware(Roles.SELF_EMPLOYED_SPEC, Roles.ADMINISTRATOR, Roles.SUPERUSER);
 const loggedInOnly = createRoleMiddleware(Roles.USER, Roles.EMPLOYEE);
 
-// router.get('/', permissionMiddleware, scheduleController.getUserSchedule);
-
 router.post('/create', loggedInOnly, recordsController.createRecord);
 
-router.get('/:userId/available', recordsController.getAvailableDaysForService);
+router.get('/:specId/available', recordsController.getAvailableDaysForService);
 
-router.post('/create', permissionMiddleware, scheduleController.createScheduleOnDay);
+router.get('/byUser', recordsController.getClientRecords);
 
-router.post('/createMany', permissionMiddleware, scheduleController.createScheduleOnDays);
+router.get('/byUserAndSpec', recordsController.getClientRecordsBySpec);
 
-router.delete('/:id/delete', permissionMiddleware, scheduleController.deleteScheduleOnDate);
+router.delete('/:recordId/delete', permissionMiddleware, recordsController.deleteRecordById);
 
-router.patch('/:id/edit', permissionMiddleware, scheduleController.changePattern);
+router.patch('/:recordId/edit', permissionMiddleware, recordsController.editRecordById);
 
 export default router;

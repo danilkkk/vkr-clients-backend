@@ -5,11 +5,55 @@ import recordModel from "../models/record-model.js";
 import servicesService from "./services-service.js";
 import usersService from "./users-service.js";
 import scheduleService from "./schedule-service.js";
+import rolesService from "./roles-service.js";
+import Roles from "../models/role-model.js";
 
 class RecordsService {
 
     async getRecordsBySchedule(scheduleId) {
         return await RecordModel.find({ scheduleId }).exec();
+    }
+
+    async editRecordById(currentUser, clientId, recordId, changes) {
+        const record = await getRecordDocumentById(recordId);
+
+        if (currentUser.id !== record.userId) {
+            rolesService.checkPermission(currentUser, Roles.EMPLOYEE)
+        }
+
+        const scheduleId = record.scheduleId;
+
+        if (changes.startTime || changes.duration) {
+            const scheduleDocument = await scheduleService.getPopulatedScheduleDocumentById(scheduleId);
+
+            const otherRecords = await this.getRecordsBySchedule(scheduleId);
+
+            const startTime = changes.from || record.from;
+            const duration = changes.duration || record.duration;
+
+            if (!scheduleService.isTheRecordFit(scheduleDocument.patternId.intervals, otherRecords, startTime, duration)) {
+                throw ApiError.BadRequest('Recording for the current time is not available');
+            }
+
+            record.startTime = startTime;
+            record.duration = duration;
+        }
+
+        if (changes.cost && changes.cost >= 0) {
+            record.cost = changes.cost;
+        }
+
+        return await this.getRecordById(currentUser, recordId);
+    }
+
+    async getRecordById(currentUser, recordId) {
+        const record = await getRecordDocumentById(recordId);
+
+        if (currentUser.id !== record.userId) {
+            rolesService.checkPermission(currentUser, Roles.EMPLOYEE)
+        }
+
+        return RecordDto.Convert(record);
     }
 
     async createRecord(clientId, serviceId, scheduleId, startTime) {
@@ -29,12 +73,7 @@ class RecordsService {
 
         const { _id: recordId } = await recordModel.create({clientId, startTime, specId, serviceId, scheduleId, ...service });
 
-        const record = await recordModel.findById(recordId)
-            .populate('clientId')
-            .populate('specId')
-            .populate('serviceId')
-            .populate('scheduleId')
-            .exec()
+        const record = await getRecordDocumentByIdSafe(recordId);
 
         return RecordDto.Convert(record);
     }
@@ -53,33 +92,56 @@ class RecordsService {
         return await scheduleService.getFreeTimeForPeriod(specId, from, to,  serviceDuration);
     }
 
-    async getClientRecords(clientId) {
+    async getClientRecords(currentUser, clientId) {
+        if (currentUser.id !== clientId) {
+            rolesService.checkPermission(currentUser, Roles.EMPLOYEE);
+        }
+
         const records = await RecordModel.find({ clientId }).exec();
+
         return RecordDto.ConvertMany(records);
     }
 
-    async deletePatternById(currentUser, id) {
-        const patternDocument = await getPatternDocumentById(id);
+    async getClientRecordsBySpec(currentUser, clientId, specId) {
+        if (currentUser.id !== clientId) {
+            rolesService.checkPermission(currentUser, Roles.EMPLOYEE);
+        }
 
-        // TODO удалять паттерн, если он нигде не используется
+        const records = await RecordModel.find({ clientId, specId }).exec();
 
-        patternDocument.userId = undefined;
-        await patternDocument.save();
+        return RecordDto.ConvertMany(records);
+    }
+
+    async deleteRecordById(currentUser, id) {
+        const record = await RecordModel.findById(id).exec();
+
+        if (record.clientId !== currentUser.id) {
+            rolesService.checkPermission(currentUser, Roles.EMPLOYEE);
+        }
+
+        await record.delete();
+
+        return RecordDto.Convert(record);
     }
 }
 
-async function getPatternDocumentById(id) {
-    const patternDocument = await getPatternDocumentByIdSafe(id);
+async function getRecordDocumentById(id) {
+    const recordDocument = await getRecordDocumentByIdSafe(id);
 
-    if (!patternDocument) {
-        throw ApiError.NotFound(`Schedule pattern with id ${id} does not exist`);
+    if (!recordDocument) {
+        throw ApiError.NotFound(`Record with id ${id} does not exist`);
     }
 
-    return patternDocument;
+    return recordDocument;
 }
 
-async function getPatternDocumentByIdSafe(id) {
-    return await schedulePatternModel.findById(id).exec();
+async function getRecordDocumentByIdSafe(id) {
+    return await recordModel.findById(id)
+        .populate('clientId')
+        .populate('specId')
+        .populate('serviceId')
+        .populate('scheduleId')
+        .exec()
 }
 
 async function checkIfSpecHasService(specId, serviceId) {
