@@ -32,6 +32,36 @@ class RecordController {
         }
     }
 
+    async getProfitForPeriod(req, res, next) {
+        try {
+            const { from, to } = req.body;
+
+            const currentUser = res.getCurrentUser();
+
+            const userId = req.body.userId ? req.body.userId : currentUser.id;
+
+            const record = await recordsService.getProfitForPeriod(currentUser, userId, from, to)
+
+            return res.json(record);
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    async setPaidStatus(req, res, next) {
+        try {
+            const { recordId } = req.body;
+
+            const currentUser = res.getCurrentUser();
+
+            await recordsService.setPaidStatus(currentUser, recordId)
+
+            return res.send();
+        } catch (e) {
+            next(e);
+        }
+    }
+
     async getClientRecords(req, res, next) {
         try {
             const currentUser = res.getCurrentUser();

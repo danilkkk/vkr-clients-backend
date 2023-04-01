@@ -17,7 +17,9 @@ const RecordSchema = new Schema({
     /** длительность услуги (записывается отдельно, так как услуга может быть отредактирована) */
     duration: { type: Number, required: true },
     /** время начала сеанса */
-    startTime: { type: Number, required: true }
+    startTime: { type: Number, required: true },
+    /** оплачена ли услуга */
+    paid: { type: Boolean, required: false },
 })
 
 export default model('RecordModel', RecordSchema, 'records');

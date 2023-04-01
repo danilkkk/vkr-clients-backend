@@ -1,10 +1,10 @@
 import ApiError from "../exceptions/api-error.js";
 import scheduleModel from "../models/schedule-model.js";
-import moment from "moment";
 import ScheduleDto from "../dtos/schedule-dto.js";
 import ScheduleModel from "../models/schedule-model.js";
 import RecordModel from "../models/record-model.js";
 import {ObjectId} from "mongodb";
+import {dateToString, getDateStringsFromInterval, stringToMillis} from "../utils/time-utils.js";
 
 class ScheduleService {
 
@@ -63,6 +63,12 @@ class ScheduleService {
         return ScheduleDto.ConvertMany(schedule);
     }
 
+    async getScheduleForPeriod(userId, from, to) {
+        const dates = getDateStringsFromInterval(from, to);
+        console.log(dates);
+        return await this.getScheduleForDays(userId, dates);
+    }
+
     async getFreeTimeForPeriod(userId, from, to, serviceDuration) {
         const fromStr = dateToString(from);
         const toStr = dateToString(to);
@@ -86,8 +92,8 @@ class ScheduleService {
                 '$match': {
                     'userId': new ObjectId(userId),
                     'convertedDate': {
-                        '$gte': stringToDate(fromStr),
-                        '$lte': stringToDate(toStr)
+                        '$gte': stringToMillis(fromStr),
+                        '$lte': stringToMillis(toStr)
                     }
                 }
             },
@@ -217,19 +223,10 @@ async function getUserScheduleDocumentByDateSafe(userId, date) {
     return await scheduleModel.findOne({ date: dateStr, userId }).exec();
 }
 
-function dateToString(date) {
-    return moment(date).format('YYYY-MM-DD');
-}
-
 async function getPopulatedUserSchedule(userId, date) {
     const dateStr = dateToString(date);
     const schedule = await scheduleModel.findOne({ date: dateStr, userId }).populate('patternId').populate('userId').exec();
     return schedule;
-}
-
-
-function stringToDate(dateString) {
-    return Date.parse(dateString);
 }
 
 export default new ScheduleService()

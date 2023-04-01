@@ -15,9 +15,13 @@ router.get('/:specId/available', recordsController.getAvailableDaysForService);
 
 router.get('/byUser', recordsController.getClientRecords);
 
+router.get('/profit', recordsController.getProfitForPeriod);
+
 router.get('/byUserAndSpec', recordsController.getClientRecordsBySpec);
 
 router.delete('/:recordId/delete', permissionMiddleware, recordsController.deleteRecordById);
+
+router.patch('/:recordId/paid', permissionMiddleware, recordsController.setPaidStatus);
 
 router.patch('/:recordId/edit', permissionMiddleware, recordsController.editRecordById);
 

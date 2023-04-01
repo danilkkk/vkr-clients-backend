@@ -14,6 +14,30 @@ class RecordsService {
         return await RecordModel.find({ scheduleId }).exec();
     }
 
+    async setPaidStatus(currentUser, recordId) {
+        rolesService.checkPermission(currentUser, Roles.SELF_EMPLOYED_SPEC);
+
+        await RecordModel.findByIdAndUpdate(recordId, { paid: true });
+    }
+
+    async getProfitForPeriod(currentUser, specId, from, to) {
+        if (currentUser.id !== specId) {
+            const spec = await usersService.getUserById(specId);
+
+            rolesService.checkIfHasMorePriority(currentUser, spec.roles, Roles.EMPLOYEE);
+        }
+
+        const schedulesOnPeriod = await scheduleService.getScheduleForPeriod(specId, from, to);
+
+        const scheduleIds = schedulesOnPeriod.map(s => s.id);
+
+        const records = await RecordModel.find({ paid: true, scheduleId: { $in: scheduleIds } }).populate('scheduleId').exec();
+
+        const sum = records.reduce((sum, current) => sum + current.cost, 0);
+
+        return sum;
+    }
+
     async editRecordById(currentUser, clientId, recordId, changes) {
         const record = await getRecordDocumentById(recordId);
 
@@ -41,6 +65,10 @@ class RecordsService {
 
         if (changes.cost && changes.cost >= 0) {
             record.cost = changes.cost;
+        }
+
+        if (changes.paid) {
+            record.paid = changes.paid;
         }
 
         return await this.getRecordById(currentUser, recordId);
