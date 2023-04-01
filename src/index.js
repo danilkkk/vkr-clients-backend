@@ -13,6 +13,7 @@ import officesRouter from "./routers/offices-router.js";
 import servicesRouter from "./routers/services-router.js";
 import schedulePatternsRouter from "./routers/schedule-patterns-router.js";
 import scheduleRouter from "./routers/schedule-router.js";
+import recordsRouter from "./routers/records-router.js";
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ const app = express()
     .use('/services', servicesRouter)
     .use('/patterns', schedulePatternsRouter)
     .use('/schedule', scheduleRouter)
+    .use('/records', recordsRouter)
     .use(errorMiddleware);
 
 app.response.getCurrentUser = function () {

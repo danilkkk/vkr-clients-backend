@@ -1,14 +1,28 @@
 import scheduleService from "../services/schedule-service.js";
+import recordsService from "../services/records-service.js";
 
-class ScheduleController {
+class RecordController {
 
-    async createScheduleOnDay(req, res, next) {
+    async createRecord(req, res, next) {
         try {
-            const { date, patternId } = req.body;
+            const { serviceId, scheduleId, time } = req.body;
 
             const userId = req.body.userId ? req.body.userId : res.getCurrentUser().id;
 
-            const schedule = await scheduleService.createScheduleOnDay(userId, date, patternId);
+            const schedule = await recordsService.createRecord(userId, serviceId, scheduleId, time);
+
+            return res.json(schedule);
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    async getAvailableDaysForService(req, res, next) {
+        try {
+            const { serviceId, from, to } = req.body;
+            const specId = req.params.userId;
+
+            const schedule = await recordsService.getAvailableDaysForService(specId, serviceId, from, to);
 
             return res.json(schedule);
         } catch (e) {
@@ -81,4 +95,4 @@ class ScheduleController {
     }
 }
 
-export default new ScheduleController();
+export default new RecordController();

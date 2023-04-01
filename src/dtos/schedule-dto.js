@@ -5,13 +5,13 @@ export default class ScheduleDto {
     id;
     date;
     specialist;
-    schedule;
+    intervals;
 
     constructor({ _id, date, userId, patternId }) {
         this.id = _id;
         this.date = date;
         const pattern = new SchedulePatternDto(patternId);
-        this.schedule = pattern.intervals;
+        this.intervals = pattern.intervals;
         this.specialist = new SpecialistDto(userId);
     }
 
