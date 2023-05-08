@@ -8,10 +8,30 @@ import scheduleService from "./schedule-service.js";
 import rolesService from "./roles-service.js";
 import Roles from "../models/role-model.js";
 import logger from "../logger.js";
+import moment from "moment";
 
 class RecordsService {
     constructor() {
         logger.info('[RecordsService] initialization...');
+    }
+
+    async getRecordsOnDate(date, callback) {
+        await RecordModel.find().populate('clientId')
+            .populate('specId')
+            .populate('serviceId')
+            .populate('scheduleId')
+            .cursor()
+            .eachAsync(async (record) => {
+                try {
+                    if (record.scheduleId.date === date) {
+                        const recordDto = RecordDto.Convert(record);
+                        return callback(recordDto);
+                    }
+                } catch (e) {
+                    logger.error(e);
+                    console.log(record);
+                }
+            })
     }
 
     async getRecordsBySchedule(scheduleId) {

@@ -61,3 +61,7 @@ export function splitIntervalByIntervals(from, to, minLength, step = 1000 * 60 *
 
     return times;
 }
+
+export function getTomorrow() {
+    return moment(Date.now()).add(1, 'day');
+}

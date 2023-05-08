@@ -16,6 +16,7 @@ import scheduleRouter from "./routers/schedule-router.js";
 import recordsRouter from "./routers/records-router.js";
 
 import telegramBotService from "./services/telegram-bot-service.js";
+import startNotify from "./services/notifier-service.js";
 
 dotenv.config();
 
@@ -67,7 +68,11 @@ const startServer = async () => {
             }
         });
 
-        server = app.listen(PORT, () => logger.info(`Server was started on port ${PORT} in ${(Date.now() - start).toFixed(2)} ms`));
+        server = app.listen(PORT, () => {
+            logger.info(`Server was started on port ${PORT} in ${(Date.now() - start).toFixed(2)} ms`);
+            startNotify();
+            logger.info(`start notifying...`);
+        });
     } catch (e) {
         logger.error(e);
     }

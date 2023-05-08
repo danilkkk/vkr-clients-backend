@@ -15,6 +15,7 @@ const WEB_SITE_URL = process.env.CLIENT_URL;
 const CALLBACK_DATA_SEPARATOR = ':';
 
 const OPTIONS = { polling: true };
+const HTML_MESSAGE_OPTION = { parse_mode : 'HTML' };
 const UNKNOWN_COMMAND = 'К сожалению, я Вас не понимаю. Введите команду из списка';
 const UNKNOWN_ERROR = 'Произошла непредвиденная ошибка. Попробуйте еще раз.';
 
@@ -55,8 +56,12 @@ class TelegramBotService {
         await this.bot.stopPolling();
     }
 
-    async sendMessage(chatId, message) {
-        return await this.bot.sendMessage(chatId, message);
+    async sendMessage(chatId, message, options) {
+        return await this.bot.sendMessage(chatId, message, options);
+    }
+
+    async sendHTMLMessage(chatId, message) {
+        return await this.bot.sendMessage(chatId, message, HTML_MESSAGE_OPTION);
     }
 
     async _handleChat() {
@@ -83,7 +88,7 @@ class TelegramBotService {
                         return await this.generateTempPassword(chatId);
 
                     default:
-                        return await this.bot.sendMessage(chatId, UNKNOWN_COMMAND);
+                        return await this.sendMessage(chatId, UNKNOWN_COMMAND);
                 }
             } catch (e) {
                 return await this.bot.sendMessage(chatId, UNKNOWN_ERROR);
@@ -126,54 +131,54 @@ class TelegramBotService {
                 }
             } catch (e) {
                 logger.error(e);
-                return await this.bot.sendMessage(chatId, UNKNOWN_ERROR);
+                return await this.sendMessage(chatId, UNKNOWN_ERROR);
             }
         });
     }
 
     async startAppointment(chatId) {
         const options = await getOfficesButtons();
-        return await this.bot.sendMessage(chatId, 'Выберите офис, который Вам будет удобно посетить:', options);
+        return await this.sendMessage(chatId, 'Выберите офис, который Вам будет удобно посетить:', options);
     }
 
     async sendGreeting(chatId, from) {
         await usersService.registerUserFromTelegram(chatId, from.first_name, from.last_name);
         await this.bot.sendSticker(chatId, 'https://tlgrm.ru/_/stickers/319/9d0/3199d0a3-cc1e-3cb6-be7d-dfb398b9af88/256/70.webp');
-        await this.bot.sendMessage(chatId, getGreetingMessage(from.first_name));
-        return await this.bot.sendMessage(chatId, INFO_MESSAGE);
+        await this.sendMessage(chatId, getGreetingMessage(from.first_name));
+        return await this.sendMessage(chatId, INFO_MESSAGE);
     }
 
     async bindExistingAccount(chatId) {
-        return await this.bot.sendMessage(chatId, `Чтобы привязать существующий аккаунт, зайдите в раздел настроек на нашем сайте <a href="${WEB_SITE_URL}">${WEB_SITE_URL}</a> и укажите следующий идентификатор: ${chatId}`, {parse_mode : "HTML"});
+        return await this.sendHTMLMessage(chatId, `Чтобы привязать существующий аккаунт, зайдите в раздел настроек на нашем сайте <a href="${WEB_SITE_URL}">${WEB_SITE_URL}</a> и укажите следующий идентификатор: <b>${chatId}</b>`);
     }
 
     async generateTempPassword(chatId) {
         const passwordLink = await authService.resetPassword(undefined, undefined, chatId);
-        await this.bot.sendMessage(chatId, `Чтобы воспользоваться сайтом, необходим пароль. Чтобы создать новый пароль, перейдите по этой ссылке: <a href="${passwordLink}">${passwordLink}</a>`, {parse_mode : "HTML"});
-        await this.bot.sendMessage(chatId, `В дальнейшем для входа в качестве логина используйте следующий идентификатор: ${chatId}`);
-        return await this.bot.sendMessage(chatId, `Наш сайт: <a href="${WEB_SITE_URL}">${WEB_SITE_URL}</a>`, {parse_mode : "HTML"});
+        await this.sendHTMLMessage(chatId, `Чтобы воспользоваться сайтом, необходим пароль. Чтобы создать новый пароль, перейдите по этой ссылке: <a href="${passwordLink}">${passwordLink}</a>`);
+        await this.sendHTMLMessage(chatId, `В дальнейшем для входа в качестве логина используйте следующий идентификатор: <b>${chatId}</b>`);
+        return await this.sendHTMLMessage(chatId, `Наш сайт: <a href="${WEB_SITE_URL}">${WEB_SITE_URL}</a>`);
     }
 
     async sendUserRecords(chatId) {
         const records = await recordsService.getClientRecordsByTelegramId(chatId);
 
         if (!records || records.length === 0) {
-            return await this.bot.sendMessage(chatId, 'У Вас пока нет предстоящих записей');
+            return await this.sendMessage(chatId, 'У Вас пока нет предстоящих записей');
         }
 
-        await this.bot.sendMessage(chatId, `Количество предстоящих записей: ${records.length}. Вот они:`);
+        await this.sendMessage(chatId, `Количество предстоящих записей: ${records.length}. Вот они:`);
 
         for (let i = 0; i < records.length; i++) {
             const button = getButton('Отменить эту запись', CallbackTypes.CANCEL_RECORD, records[i].id);
             const options = formatButtons([[button]]);
 
-            await this.bot.sendMessage(chatId, `#${i + 1}. ${getRecordString(records[i])}`, options);
+            await this.sendMessage(chatId, `#${i + 1}. ${getRecordString(records[i])}`, options);
         }
     }
 
     async handleConfirmation(chatId) {
-        await this.bot.sendMessage(chatId, `Отлично! Будем ждать Вас!`);
-        return await this.bot.sendMessage(chatId, INFO_MESSAGE);
+        await this.sendMessage(chatId, `Отлично! Будем ждать Вас!`);
+        return await this.sendMessage(chatId, INFO_MESSAGE);
     }
 
     async handleTimeSelection(chatId, startTime) {
@@ -186,16 +191,16 @@ class TelegramBotService {
         await chatBotService.clearData(chatId);
 
         recordsService.createRecordByTelegramId(chatId, chatInfo.serviceId, chatInfo.scheduleId, Number(startTime)).then(async (record) => {
-            await this.bot.sendMessage(chatId, `Ура, все готово! Запись успешно создана. Проверьте, пожалуйста:`);
+            await this.sendMessage(chatId, `Ура, все готово! Запись успешно создана. Проверьте, пожалуйста:`);
             chatsCache[chatId] = undefined;
             const okButton = getButton('Да, все хорошо', CallbackTypes.CONFIRM_ACTION, record.id);
             const RejectButton = getButton('Хочу отменить эту запись', CallbackTypes.CANCEL_RECORD, record.id);
             const options = formatButtons([[okButton, RejectButton]]);
 
-            await this.bot.sendMessage(chatId, getRecordString(record), options);
+            await this.sendMessage(chatId, getRecordString(record), options);
         }).catch(async (error) => {
-            await this.bot.sendMessage(chatId, `Хмм... Что-то пошло не так: ${error && error.message}`);
-            await this.bot.sendMessage(chatId, INFO_MESSAGE);
+            await this.sendMessage(chatId, `Хмм... Что-то пошло не так: ${error && error.message}`);
+            await this.sendMessage(chatId, INFO_MESSAGE);
         })
     }
 
@@ -213,12 +218,12 @@ class TelegramBotService {
         if (!daySchedule || !daySchedule.freeIntervals || daySchedule.freeIntervals.length === 0) {
             const options = await getFreeDaysButtons(chatInfo.specId, chatInfo.serviceId);
             if (options) {
-                return await this.bot.sendMessage(chatId, 'К сожалению, в этот день у мастера нет свободного времени. Попробуйте выбрать другую дату:', options);
+                return await this.sendMessage(chatId, 'К сожалению, в этот день у мастера нет свободного времени. Попробуйте выбрать другую дату:', options);
             }
         }
 
         const options = await getFreTimeButtons(daySchedule.freeIntervals, serviceDuration);
-        await this.bot.sendMessage(chatId, 'Можете выбрать любое подходящее для Вас время в этот день:', options);
+        await this.sendMessage(chatId, 'Можете выбрать любое подходящее для Вас время в этот день:', options);
     }
 
     async handleSpecSelection(chatId, specId) {
@@ -232,10 +237,10 @@ class TelegramBotService {
 
         const options = await getFreeDaysButtons(specId, chatInfo.serviceId);
         if (options) {
-            return await this.bot.sendMessage(chatId, 'Почти готово! Осталось только определиться со временем. Начнем с подходящей даты:', options);
+            return await this.sendMessage(chatId, 'Почти готово! Осталось только определиться со временем. Начнем с подходящей даты:', options);
         }
 
-        await this.bot.sendMessage(chatId, 'К сожалению, у мастера пока нет свободного времени');
+        await this.sendMessage(chatId, 'К сожалению, у мастера пока нет свободного времени');
     }
 
     async handleOfficeSelection(chatId, officeId) {
@@ -248,7 +253,7 @@ class TelegramBotService {
         await chatBotService.saveOffice(chatId, officeId);
 
         const options = await getServicesButtons(officeId);
-        await this.bot.sendMessage(chatId, 'Отлично! Давайте теперь определимся с услугой:', options);
+        await this.sendMessage(chatId, 'Отлично! Давайте теперь определимся с услугой:', options);
     }
 
     async handleServiceSelection(chatId, serviceId) {
@@ -262,18 +267,18 @@ class TelegramBotService {
 
         const options = await getSpecButtons(serviceId);
 
-        await this.bot.sendMessage(chatId, 'К какому специалисту Вам бы хотелось обратиться?', options);
+        await this.sendMessage(chatId, 'К какому специалисту Вам бы хотелось обратиться?', options);
     }
 
     async handleOperationCancelling(chatId) {
         await chatBotService.clearData(chatId);
-        return await this.bot.sendMessage(chatId, INFO_MESSAGE);
+        return await this.sendMessage(chatId, INFO_MESSAGE);
     }
 
     async handleRecordCancelling(chatId, recordId) {
         recordsService.deleteRecordByIdByBot(recordId).then(async () => {
-            await this.bot.sendMessage(chatId, 'Запись успешно отменена. Хотите записаться еще раз?');
-            return this.bot.sendMessage(chatId, INFO_MESSAGE);
+            await this.sendMessage(chatId, 'Запись успешно отменена. Хотите записаться еще раз?');
+            return this.sendMessage(chatId, INFO_MESSAGE);
         })
     }
 }
