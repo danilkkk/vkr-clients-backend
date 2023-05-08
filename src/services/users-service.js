@@ -12,6 +12,7 @@ import mailService from "./mail-service.js";
 import { v4 } from "uuid";
 import ServiceSpecialistModel from "../models/service-specialist-model.js";
 import ServiceDto from "../dtos/service-dto.js";
+import logger from "../logger.js";
 
 dotenv.config();
 
@@ -20,12 +21,15 @@ const PASSWORD_SALT = Number(process.env.PASSWORD_SAULT || 5);
 const SPECIALIST_ROLES = { roles: { $in: [Roles.SPECIALIST.name, Roles.SELF_EMPLOYED_SPEC.name]} };
 
 class UsersService {
+    constructor() {
+        logger.info('[UsersService] initialization...');
+    }
 
     itIsTheSameUser(userFrom, userTo) {
         return userFrom.id === userTo.id;
     }
 
-    async findUserByEmailOrPhone(email, phone) {
+    async findUserByEmailOrPhoneOrTgId(email, phone, telegramId) {
         const pipeline = {
             $or: []
         }
@@ -42,11 +46,27 @@ class UsersService {
             })
         }
 
+        if (telegramId) {
+            pipeline.$or.push({
+                'telegramId': telegramId
+            })
+        }
+
         return await UserModel.findOne(pipeline).exec();
     }
 
+    async registerUserFromTelegram(telegramId, name, surname) {
+        const candidate = await this.getUserByTelegramId(telegramId);
+
+        if (candidate) {
+            return;
+        }
+
+        await userModel.create({ telegramId, name, surname, roles: [Roles.USER.name], isActivated: true });
+    }
+
     async createUser(currentUser, name, surname, email, phone, roles = [Roles.UNREGISTERED.name], officeId) {
-        const candidate = await this.findUserByEmailOrPhone(email, phone);
+        const candidate = await this.findUserByEmailOrPhoneOrTgId(email, phone);
 
         if (candidate) {
             throw ApiError.BadRequest(`Email address or phone is already in use`);
@@ -101,6 +121,11 @@ class UsersService {
 
     async getUserById(id) {
         const userDocument = await getUserDocumentById(id);
+        return UserDto.Convert(userDocument);
+    }
+
+    async getUserByTelegramId(telegramId) {
+        const userDocument = await userModel.findOne({ telegramId }).exec();
         return UserDto.Convert(userDocument);
     }
 

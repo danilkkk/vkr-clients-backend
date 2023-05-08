@@ -7,8 +7,12 @@ import usersService from "./users-service.js";
 import scheduleService from "./schedule-service.js";
 import rolesService from "./roles-service.js";
 import Roles from "../models/role-model.js";
+import logger from "../logger.js";
 
 class RecordsService {
+    constructor() {
+        logger.info('[RecordsService] initialization...');
+    }
 
     async getRecordsBySchedule(scheduleId) {
         return await RecordModel.find({ scheduleId }).exec();
@@ -82,6 +86,11 @@ class RecordsService {
         return RecordDto.Convert(record);
     }
 
+    async createRecordByTelegramId(telegramId, serviceId, scheduleId, startTime) {
+        const user = await usersService.getUserByTelegramId(telegramId);
+        return await this.createRecord(user.id, serviceId, scheduleId, startTime);
+    }
+
     async createRecord(clientId, serviceId, scheduleId, startTime) {
         const service = await servicesService.getServiceById(serviceId);
 
@@ -97,15 +106,23 @@ class RecordsService {
             throw ApiError.BadRequest('Recording for the current time is not available');
         }
 
-        const { _id: recordId } = await recordModel.create({clientId, startTime, specId, serviceId, scheduleId, ...service });
+        const { _id: recordId } = await recordModel.create({ clientId, startTime, specId, serviceId, scheduleId, ...service });
 
         const record = await getRecordDocumentByIdSafe(recordId);
 
         return RecordDto.Convert(record);
     }
 
+    async getAvailableTimeIntervalsForServiceByScheduleId(specId, serviceId, scheduleId, from) {
+        const { days, serviceDuration } = await this.getAvailableDaysForService(specId, serviceId, from);
+        return {
+            daySchedule: days.find(record => String(record.id) === scheduleId),
+            serviceDuration
+        };
+    }
+
     async getAvailableDaysForService(specId, serviceId, from, to) {
-       if (from < Date.now() || to < Date.now()) {
+       if (from < Date.now() || to && to < Date.now()) {
            throw ApiError.BadRequest('Date in the past');
        }
 
@@ -115,7 +132,31 @@ class RecordsService {
 
         const serviceDuration = service.duration;
 
-        return await scheduleService.getFreeTimeForPeriod(specId, from, to,  serviceDuration);
+        const days = await scheduleService.getFreeTimeForPeriod(specId, from, to, serviceDuration);
+
+        return {
+            days,
+            serviceDuration
+        }
+    }
+
+    async getClientRecordsUncheck(clientId) {
+        console.log(clientId);
+        const records = await RecordModel.find({ clientId }).populate('clientId')
+            .populate('specId')
+            .populate('serviceId')
+            .populate('scheduleId')
+            .exec();
+
+        return RecordDto.ConvertMany(records);
+    }
+
+    async getClientRecordsByTelegramId(telegramId) {
+        const user = await usersService.getUserByTelegramId(telegramId);
+
+        if (user) {
+            return await this.getClientRecordsUncheck(user.id);
+        }
     }
 
     async getClientRecords(currentUser, clientId) {
@@ -123,9 +164,7 @@ class RecordsService {
             rolesService.checkPermission(currentUser, Roles.EMPLOYEE);
         }
 
-        const records = await RecordModel.find({ clientId }).exec();
-
-        return RecordDto.ConvertMany(records);
+        return await this.getClientRecordsUncheck(clientId);
     }
 
     async getClientRecordsBySpec(currentUser, clientId, specId) {
@@ -136,6 +175,17 @@ class RecordsService {
         const records = await RecordModel.find({ clientId, specId }).exec();
 
         return RecordDto.ConvertMany(records);
+    }
+
+    async deleteRecordByIdByBot(id) {
+        const record = await RecordModel.findById(id).exec();
+
+        if (record) {
+            await record.delete();
+            return RecordDto.Convert(record);
+        }
+
+        return {};
     }
 
     async deleteRecordById(currentUser, id) {
@@ -173,7 +223,7 @@ async function getRecordDocumentByIdSafe(id) {
 async function checkIfSpecHasService(specId, serviceId) {
     const servicesBySpec = await usersService.getServicesBySpecialist(specId);
 
-    if (!servicesBySpec.find(service => String(service.id) === serviceId)) {
+    if (!servicesBySpec.find(service => String(service.id) === String(serviceId))) {
         throw ApiError.BadRequest(`This service is not available from this specialist`);
     }
 }

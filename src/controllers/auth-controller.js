@@ -41,9 +41,9 @@ class AuthController {
 
     async login(req, res, next) {
         try {
-            const { email, phone, password } = req.body;
+            const { email, phone, password, telegramId } = req.body;
 
-            const user = await authService.login(email, phone, password);
+            const user = await authService.login(email, phone,  telegramId, password);
 
             saveRefreshTokenToCookie(res, user.refreshToken);
 

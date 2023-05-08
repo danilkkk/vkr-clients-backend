@@ -15,6 +15,8 @@ import schedulePatternsRouter from "./routers/schedule-patterns-router.js";
 import scheduleRouter from "./routers/schedule-router.js";
 import recordsRouter from "./routers/records-router.js";
 
+import telegramBotService from "./services/telegram-bot-service.js";
+
 dotenv.config();
 
 const PORT = process.env.PORT || 5005;

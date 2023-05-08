@@ -1,8 +1,13 @@
 import ApiError from "../exceptions/api-error.js";
 import serviceModel from "../models/service-model.js";
 import ServiceDto from "../dtos/service-dto.js";
+import logger from "../logger.js";
 
 class ServicesService {
+
+    constructor() {
+        logger.info('[ServicesService] initialization...');
+    }
 
     async createService(name, info, cost, duration) {
         const serviceDocument = await serviceModel.create({ name, info, cost, duration });

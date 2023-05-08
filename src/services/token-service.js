@@ -3,8 +3,13 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import tokenModel from '../models/token-model.js';
+import logger from "../logger.js";
 
 class TokenService {
+    constructor() {
+        logger.info('[TokenService] initialization...');
+    }
+
     generateTokens(payload) {
         const accessToken = jwt.sign(payload, process.env.JWT_ACCESS_SECRET, { expiresIn: '10h' });
         const refreshToken = jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '30d' });

@@ -1,8 +1,12 @@
 import ApiError from "../exceptions/api-error.js";
 import schedulePatternModel from "../models/schedule-pattern-model.js";
 import SchedulePatternDto from "../dtos/schedule-pattern-dto.js";
+import logger from "../logger.js";
 
 class SchedulePatternsService {
+    constructor() {
+        logger.info('[SchedulePatternsService] initialization...');
+    }
 
     checkIfTheSameUser(currentUser, userId) {
         if (!currentUser || currentUser.id !== userId) {

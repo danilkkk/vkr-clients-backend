@@ -3,10 +3,15 @@ import scheduleModel from "../models/schedule-model.js";
 import ScheduleDto from "../dtos/schedule-dto.js";
 import ScheduleModel from "../models/schedule-model.js";
 import RecordModel from "../models/record-model.js";
-import {ObjectId} from "mongodb";
-import {dateToString, getDateStringsFromInterval, stringToMillis} from "../utils/time-utils.js";
+import { ObjectId } from "mongodb";
+import { dateToString, getDateStringsFromInterval, stringToMillis } from "../utils/time-utils.js";
+import logger from "../logger.js";
 
 class ScheduleService {
+
+    constructor() {
+        logger.info('[ScheduleService] initialization...');
+    }
 
     async getPopulatedScheduleDocumentById(scheduleId) {
         return await ScheduleModel.findById(scheduleId)
@@ -65,13 +70,12 @@ class ScheduleService {
 
     async getScheduleForPeriod(userId, from, to) {
         const dates = getDateStringsFromInterval(from, to);
-        console.log(dates);
         return await this.getScheduleForDays(userId, dates);
     }
 
     async getFreeTimeForPeriod(userId, from, to, serviceDuration) {
         const fromStr = dateToString(from);
-        const toStr = dateToString(to);
+        const toStr = to ? dateToString(to) : undefined;
 
         const pipeline = [
             {
@@ -87,8 +91,11 @@ class ScheduleService {
                         '$toLong': '$stringToDate'
                     }
                 }
-            },
-            {
+            }
+        ];
+
+        if (toStr) {
+            pipeline.push({
                 '$match': {
                     'userId': new ObjectId(userId),
                     'convertedDate': {
@@ -96,16 +103,26 @@ class ScheduleService {
                         '$lte': stringToMillis(toStr)
                     }
                 }
-            },
-            {
-                    $lookup: {
-                        from: 'schedule-patterns',
-                        localField: 'patternId',
-                        foreignField: '_id',
-                        as: 'pattern'
+            })
+        } else {
+            pipeline.push({
+                '$match': {
+                    'userId': new ObjectId(userId),
+                    'convertedDate': {
+                        '$gte': stringToMillis(fromStr)
                     }
                 }
-        ]
+            })
+        }
+
+        pipeline.push({
+            $lookup: {
+                from: 'schedule-patterns',
+                localField: 'patternId',
+                foreignField: '_id',
+                as: 'pattern'
+            }
+        });
 
         const schedulesOnPeriod = await ScheduleModel.aggregate(pipeline).exec();
 
@@ -152,15 +169,11 @@ function getFreeIntervals(intervals, records) {
             duration: interval.to - interval.from,
         }));
     }
-
-    console.log(records);
     // преобразуем и сортируем массив записей по возрастанию
     records = records.map(r => ({
         from: r.startTime,
         to: r.startTime + r.duration,
     })).sort((r1, r2) => r1.from - r2.from);
-
-    console.log(records);
 
     const freeIntervals = [];
 

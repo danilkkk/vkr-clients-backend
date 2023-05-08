@@ -1,8 +1,13 @@
 import Roles from "../models/role-model.js";
 import ApiError from "../exceptions/api-error.js";
+import logger from "../logger.js";
 
 
 class RolesService {
+    constructor() {
+        logger.info('[RolesService] initialization...');
+    }
+
     get() {
         return Object.values(Roles);
     }

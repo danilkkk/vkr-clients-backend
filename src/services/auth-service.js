@@ -9,14 +9,21 @@ import ApiError from "../exceptions/api-error.js";
 import Roles from "../models/role-model.js";
 import dotenv from "dotenv";
 import usersService from "./users-service.js";
+import logger from "../logger.js";
 
 dotenv.config();
 
 const PASSWORD_SALT = Number(process.env.PASSWORD_SAULT || 5);
 
 class AuthService {
-    async resetPassword(email) {
-        const userDocument = await userModel.findOne({ email }).exec();
+
+    constructor() {
+        logger.info('[AuthService] initialization...');
+    }
+
+    async resetPassword(email, phone, telegramId) {
+        // const userDocument = await userModel.findOne({ email }).exec();
+        const userDocument = await usersService.findUserByEmailOrPhoneOrTgId(email, phone, telegramId);
 
         if (!userDocument) {
             throw ApiError.BadRequest(`User with email ${email} does not exist`);
@@ -26,13 +33,19 @@ class AuthService {
 
         userDocument.resetPasswordLink = resetPasswordLink;
 
-        await mailService.sendResetPasswordLink(email, userDocument.name, `${process.env.CLIENT_URL}/reset/${resetPasswordLink}`);
+        const link = `${process.env.CLIENT_URL}/reset/${resetPasswordLink}`;
+
+        if (email) {
+            await mailService.sendResetPasswordLink(email, userDocument.name, link);
+        }
 
         await userDocument.save();
+
+        return link;
     }
 
     async registration(name, surname, email, phone, originalPassword) {
-        const candidate = await usersService.findUserByEmailOrPhone(email, phone);
+        const candidate = await usersService.findUserByEmailOrPhoneOrTgId(email, phone);
 
         const unregistered = candidate && candidate.roles && candidate.roles.includes(Roles.UNREGISTERED.name);
 
@@ -64,8 +77,8 @@ class AuthService {
         return await getUserWithTokens(userDocument)
     }
 
-    async login(email, phone, password) {
-        const userDocument = await usersService.findUserByEmailOrPhone(email, phone);
+    async login(email, phone, telegramId, password) {
+        const userDocument = await usersService.findUserByEmailOrPhoneOrTgId(email, phone, telegramId);
 
         if (!userDocument) {
             throw ApiError.BadRequest(`A user with an email ${email} not found`)

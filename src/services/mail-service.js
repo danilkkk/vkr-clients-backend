@@ -6,6 +6,8 @@ dotenv.config();
 class MailService {
 
     constructor() {
+        logger.info('[MailService] initialization...');
+
         this.transporter = nodemailer.createTransport({
             secure: true,
             auth: {
