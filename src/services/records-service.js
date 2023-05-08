@@ -141,7 +141,6 @@ class RecordsService {
     }
 
     async getClientRecordsUncheck(clientId) {
-        console.log(clientId);
         const records = await RecordModel.find({ clientId }).populate('clientId')
             .populate('specId')
             .populate('serviceId')

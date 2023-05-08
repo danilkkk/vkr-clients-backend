@@ -51,6 +51,10 @@ class TelegramBotService {
         this._handleChat();
     }
 
+    async stopPoling() {
+        await this.bot.stopPolling();
+    }
+
     async sendMessage(chatId, message) {
         return await this.bot.sendMessage(chatId, message);
     }
@@ -140,14 +144,14 @@ class TelegramBotService {
     }
 
     async bindExistingAccount(chatId) {
-        return await this.bot.sendMessage(chatId, `Чтобы привязать существующий аккаунт, зайдите в раздел настроек на нашем сайте ${WEB_SITE_URL} и укажите следующий идентификатор: ${chatId}`);
+        return await this.bot.sendMessage(chatId, `Чтобы привязать существующий аккаунт, зайдите в раздел настроек на нашем сайте <a href="${WEB_SITE_URL}">${WEB_SITE_URL}</a> и укажите следующий идентификатор: ${chatId}`, {parse_mode : "HTML"});
     }
 
     async generateTempPassword(chatId) {
         const passwordLink = await authService.resetPassword(undefined, undefined, chatId);
-        await this.bot.sendMessage(chatId, `Чтобы воспользоваться сайтом, необходим пароль. Перейдите по этой ссылке, чтобы создать новый пароль: ${passwordLink}`);
+        await this.bot.sendMessage(chatId, `Чтобы воспользоваться сайтом, необходим пароль. Чтобы создать новый пароль, перейдите по этой ссылке: <a href="${passwordLink}">${passwordLink}</a>`, {parse_mode : "HTML"});
         await this.bot.sendMessage(chatId, `В дальнейшем для входа в качестве логина используйте следующий идентификатор: ${chatId}`);
-        return await this.bot.sendMessage(chatId, `Наш сайт: ${WEB_SITE_URL}`);
+        return await this.bot.sendMessage(chatId, `Наш сайт: <a href="${WEB_SITE_URL}">${WEB_SITE_URL}</a>`, {parse_mode : "HTML"});
     }
 
     async sendUserRecords(chatId) {

@@ -78,6 +78,10 @@ startServer();
 const cleanUp = () => {
     logger.info('Stopping the server...');
 
+    telegramBotService.stopPoling().then(() => {
+        logger.info('telegramBotService is closed.');
+    });
+
     if (server) {
         server.close(() => {
             logger.info('Server is stopped.');
