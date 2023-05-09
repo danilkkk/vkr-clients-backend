@@ -77,6 +77,4 @@ describe('Testing the overall functionality of the application', () => {
 
         expect(deletedUser).toEqual(null);
     });
-
-
 });
