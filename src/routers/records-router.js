@@ -1,7 +1,6 @@
 import Router from 'express';
 import createRoleMiddleware from "../middlewares/auth-middleware.js";
 import Roles from "../models/role-model.js";
-import scheduleController from "../controllers/schedule-controller.js";
 import recordsController from "../controllers/records-controller.js";
 
 const router = new Router();
