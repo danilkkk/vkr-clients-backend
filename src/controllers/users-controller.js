@@ -44,6 +44,22 @@ class UsersController {
         }
     }
 
+    async mergeExistingProfileWithChatBot(req, res, next) {
+        try {
+            const { telegramCode } = req.body;
+
+            const { id } = req.params;
+
+            const currentUser = res.getCurrentUser();
+
+            await usersService.mergeExistingProfileWithChatBot(currentUser, telegramCode, id);
+
+            return res.send();
+        } catch (e) {
+            next(e);
+        }
+    }
+
     async getServicesBySpecialist(req, res, next) {
         try {
             const { id } = req.params;

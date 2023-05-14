@@ -13,6 +13,9 @@ import { v4 } from "uuid";
 import ServiceSpecialistModel from "../models/service-specialist-model.js";
 import ServiceDto from "../dtos/service-dto.js";
 import logger from "../logger.js";
+import RecordModel from "../models/record-model.js";
+import ScheduleModel from "../models/schedule-model.js";
+import SchedulePatternModel from "../models/schedule-pattern-model.js";
 
 dotenv.config();
 
@@ -94,6 +97,51 @@ class UsersService {
     async getSpecialistsByOffice(officeId) {
         const users = await userModel.find({ officeId, ...SPECIALIST_ROLES }).exec();
         return SpecialistDto.ConvertMany(users);
+    }
+
+    async mergeExistingProfileWithChatBot(currentUser, telegramCode, userId) {
+        if (currentUser.id !== userId) {
+            throw ApiError.UnauthorizedError();
+        }
+
+        const telegramProfile = await userModel.findOne({ telegramCode }).exec();
+
+        if (!telegramProfile) {
+            throw ApiError.NotFound(`Пользователь не найден`);
+        }
+
+        const websiteUser = await userModel.findById(userId).exec();
+
+        if (!websiteUser) {
+            throw ApiError.NotFound(`Пользователь не найден`);
+        }
+
+        if (websiteUser.telegramId) {
+            throw ApiError.NotFound(`Телеграм уже привязан`);
+        }
+
+        websiteUser.telegramId = telegramProfile.telegramId;
+        websiteUser.roles = [... new Set([...(websiteUser.roles || []), ...(telegramProfile.roles || [])])];
+
+        if (!websiteUser.isActivated && websiteUser.email) {
+            websiteUser.email = null;
+        }
+
+        websiteUser.isActivated = true;
+
+
+        await websiteUser.save();
+
+        try {
+            await RecordModel.updateMany({ clientId: telegramProfile._id }, { clientId: websiteUser._id });
+            await ServiceSpecialistModel.updateMany({ userId: telegramProfile._id }, { userId: websiteUser._id });
+            await ScheduleModel.updateMany({ userId: telegramProfile._id }, { userId: websiteUser._id });
+            await SchedulePatternModel.updateMany({ userId: telegramProfile._id }, { userId: websiteUser._id });
+        } catch (e) {
+            throw ApiError.InternalError('Не все записи удалось корректно смержить');
+        } finally {
+            await telegramProfile.delete();
+        }
     }
 
     async getSpecialistsByService(serviceId) {

@@ -7,6 +7,7 @@ import Roles from "../models/role-model.js";
 const router = new Router();
 
 const accessMiddleware = createRoleMiddleware(Roles.SELF_EMPLOYED_SPEC, Roles.ADMINISTRATOR, Roles.SUPERUSER);
+const loggedInOnly = createRoleMiddleware(Roles.USER);
 
 router.post('/create', accessMiddleware, usersController.createUser);
 
@@ -19,6 +20,8 @@ router.post('/:userId/addService', accessMiddleware, usersController.addServiceT
 router.get('/:id', createRoleMiddleware(Roles.USER), usersController.getUserById);
 
 router.get('/:id/services', usersController.getServicesBySpecialist);
+
+router.post('/:id/mergeTelegram', loggedInOnly, usersController.mergeExistingProfileWithChatBot);
 
 router.patch('/:id/edit', accessMiddleware, usersController.editUserById);
 

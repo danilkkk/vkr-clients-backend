@@ -7,7 +7,7 @@ const router = new Router();
 
 const permissionMiddleware = createRoleMiddleware(Roles.SELF_EMPLOYED_SPEC, Roles.ADMINISTRATOR, Roles.SUPERUSER);
 const permissionMiddlewareLight = createRoleMiddleware(Roles.EMPLOYEE);
-const loggedInOnly = createRoleMiddleware(Roles.USER, Roles.EMPLOYEE);
+const loggedInOnly = createRoleMiddleware(Roles.USER);
 
 router.post('/create', loggedInOnly, recordsController.createRecord);
 
