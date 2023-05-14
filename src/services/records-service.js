@@ -160,21 +160,32 @@ class RecordsService {
         }
     }
 
-    async getClientRecordsUncheck(clientId) {
-        const records = await RecordModel.find({ clientId }).populate('clientId')
+    async getClientRecordsUncheck(clientId, specId, withUser = false) {
+        const data = {};
+
+        if (clientId) {
+            data.clientId = clientId;
+        } else {
+            data.specId = specId;
+        }
+
+        const records = await RecordModel.find(data).populate('clientId')
             .populate('specId')
             .populate('serviceId')
             .populate('scheduleId')
             .exec();
 
-        return RecordDto.ConvertMany(records);
+        return {
+            records: RecordDto.ConvertMany(records),
+            user: withUser ? await usersService.getUserById(clientId || specId) : null,
+        }
     }
 
     async getClientRecordsByTelegramId(telegramId) {
         const user = await usersService.getUserByTelegramId(telegramId);
 
         if (user) {
-            return await this.getClientRecordsUncheck(user.id);
+            return (await this.getClientRecordsUncheck(user.id)).records;
         }
     }
 
@@ -183,17 +194,15 @@ class RecordsService {
             rolesService.checkPermission(currentUser, Roles.EMPLOYEE);
         }
 
-        return await this.getClientRecordsUncheck(clientId);
+        return await this.getClientRecordsUncheck(clientId, null, currentUser.id !== clientId);
     }
 
-    async getClientRecordsBySpec(currentUser, clientId, specId) {
-        if (currentUser.id !== clientId) {
+    async getRecordsBySpec(currentUser, specId) {
+        if (currentUser.id !== specId) {
             rolesService.checkPermission(currentUser, Roles.EMPLOYEE);
         }
 
-        const records = await RecordModel.find({ clientId, specId }).exec();
-
-        return RecordDto.ConvertMany(records);
+        return await this.getClientRecordsUncheck(null, specId, currentUser.id !== specId);
     }
 
     async deleteRecordByIdByBot(id) {

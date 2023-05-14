@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import logger from "./logger.js";
 import telegramBotService from "./services/telegram-bot-service.js";
 import startNotify from "./services/notifier-service.js";
-import app from './app.js'
+import app from './app.js';
 
 dotenv.config();
 

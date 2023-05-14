@@ -7,8 +7,9 @@ export default class UserDto {
     telegramId;
     isActivated;
     roles;
+    officeId;
 
-    constructor({ _id, email, phone, name, surname, isActivated, roles, telegramId }) {
+    constructor({ _id, email, phone, name, surname, isActivated, roles, telegramId, officeId }) {
         this.id = _id;
         this.email = email;
         this.name = name;
@@ -17,6 +18,7 @@ export default class UserDto {
         this.isActivated = isActivated;
         this.roles = roles;
         this.telegramId = telegramId;
+        this.officeId = officeId;
     }
 
     static Convert(userDocument) {

@@ -6,17 +6,18 @@ import recordsController from "../controllers/records-controller.js";
 const router = new Router();
 
 const permissionMiddleware = createRoleMiddleware(Roles.SELF_EMPLOYED_SPEC, Roles.ADMINISTRATOR, Roles.SUPERUSER);
+const permissionMiddlewareLight = createRoleMiddleware(Roles.EMPLOYEE);
 const loggedInOnly = createRoleMiddleware(Roles.USER, Roles.EMPLOYEE);
 
 router.post('/create', loggedInOnly, recordsController.createRecord);
 
 router.get('/:specId/available', recordsController.getAvailableDaysForService);
 
-router.get('/byUser', recordsController.getClientRecords);
+router.get('/byUser', loggedInOnly, recordsController.getClientRecords);
 
-router.get('/profit', recordsController.getProfitForPeriod);
+router.get('/profit', permissionMiddlewareLight, recordsController.getProfitForPeriod);
 
-router.get('/byUserAndSpec', recordsController.getClientRecordsBySpec);
+router.get('/bySpec', permissionMiddlewareLight, recordsController.getRecordsBySpec);
 
 router.delete('/:recordId/delete', permissionMiddleware, recordsController.deleteRecordById);
 

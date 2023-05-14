@@ -26,7 +26,7 @@ class UsersService {
     }
 
     itIsTheSameUser(userFrom, userTo) {
-        return userFrom.id === userTo.id;
+        return String(userFrom.id) === String(userTo.id);
     }
 
     async findUserByEmailOrPhoneOrTgId(email, phone, telegramId) {
@@ -116,7 +116,20 @@ class UsersService {
 
 
     async getAllUsers(from, count) {
-        return await chunkedData(UserModel, UserDto.ConvertMany, 'users', from, count);
+        return await chunkedData(UserModel, UserDto.ConvertMany, 'users', [], from, count);
+    }
+
+    async searchUsers(query, from, count) {
+        const searchPipeline = [{
+            $match: {
+                "$text": {
+                    "$search": query,
+                    "$caseSensitive": false,
+                }
+            }
+        }];
+
+        return await chunkedData(UserModel, UserDto.ConvertMany, 'users', searchPipeline, from, count);
     }
 
     async getUserById(id) {
@@ -143,7 +156,7 @@ class UsersService {
         let isActivated = isActivated0;
         let activationLink = userDocument.activationLink;
 
-        if (email) {
+        if (email && email !== userDocument.email) {
             const candidate = await userModel.findOne({ email }).exec();
 
             if (candidate) {
@@ -157,7 +170,7 @@ class UsersService {
             }
         }
 
-        if (phone) {
+        if (phone && phone !== userDocument.phone) {
             const candidate = await userModel.findOne({ phone }).exec();
 
             if (candidate) {
@@ -167,7 +180,7 @@ class UsersService {
 
         const password = originalPassword ? await bcrypt.hash(originalPassword, PASSWORD_SALT) : userDocument.password;
 
-        await userModel.findByIdAndUpdate(id, { name, surname, isActivated, email, phone, password, roles, activationLink }).exec();
+        await userModel.findByIdAndUpdate(id, { name, surname, isActivated, email, phone, password, roles, activationLink, officeId }).exec();
 
         const newUserDocument = await getUserDocumentById(id);
 

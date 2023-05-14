@@ -5,16 +5,16 @@ import authController from '../controllers/auth-controller.js';
 const router = new Router();
 
 router.post('/registration',
-    body('email').isEmail(),
+    body('email').if(body('email').exists()).isEmail(),
     body('phone').if(body('phone').exists()).isMobilePhone('ru-RU'),
-    body('password').isLength({ min: 5, max: 32}),
+    body('password').isLength({ min: 6, max: 32}),
     authController.registration);
 
 router.post('/login', authController.login);
 
 router.post('/resetPassword', authController.resetPassword);
 
-router.post('/logout', authController.logout);
+router.get('/logout', authController.logout);
 
 router.get('/activate/:link', authController.activate);
 

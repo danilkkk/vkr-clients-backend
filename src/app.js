@@ -10,15 +10,23 @@ import servicesRouter from "./routers/services-router.js";
 import schedulePatternsRouter from "./routers/schedule-patterns-router.js";
 import scheduleRouter from "./routers/schedule-router.js";
 import recordsRouter from "./routers/records-router.js";
+import cors from 'cors'
+
+dotenv.config();
 
 const app = express()
     .use(express.json())
     .use(cookieParser())
-    .use((req, res, next) => {
-        res.header("Access-Control-Allow-Origin", "*");
-        res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-        next();
-    })
+    // .use((req, res, next) => {
+    //     res.header("Access-Control-Allow-Origin", "*");
+    //     res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, DELETE");
+    //     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    //     next();
+    // })
+    .use(cors({
+        credentials: true,
+        origin: process.env.CLIENT_URL
+    }))
     .use('/auth', authRouter)
     .use('/users', usersRouter)
     .use('/roles', rolesRouter)

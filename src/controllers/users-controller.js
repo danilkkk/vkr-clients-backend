@@ -14,6 +14,21 @@ class UsersController {
         }
     }
 
+    async searchForUsers(req, res, next) {
+        try {
+            console.log('searchForUsers');
+            const { query } = req.query;
+
+            console.log(query);
+
+            const users = await usersService.searchUsers(query);
+
+            return res.json(users);
+        } catch (e) {
+            next(e);
+        }
+    }
+
     async addServiceToSpecialist(req, res, next) {
         try {
             const { userId } = req.params;

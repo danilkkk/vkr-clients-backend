@@ -76,13 +76,11 @@ class RecordController {
         }
     }
 
-    async getClientRecordsBySpec(req, res, next) {
+    async getRecordsBySpec(req, res, next) {
         try {
             const currentUser = res.getCurrentUser();
 
-            const clientId = req.query.clientId ? req.query.clientId : currentUser.id;
-
-            const records = await recordsService.getClientRecordsBySpec(currentUser, clientId, req.query.specId)
+            const records = await recordsService.getRecordsBySpec(currentUser, req.query.specId)
 
             return res.json(records);
         } catch (e) {
@@ -106,7 +104,7 @@ class RecordController {
 
     async getAvailableDaysForService(req, res, next) {
         try {
-            const { serviceId, from, to } = req.body;
+            const { serviceId, from, to } = req.query;
             const { specId } = req.params;
 
             const schedule = await recordsService.getAvailableDaysForService(specId, serviceId, from, to);

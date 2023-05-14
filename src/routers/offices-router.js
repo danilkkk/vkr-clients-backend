@@ -14,9 +14,11 @@ router.get('/:id', officesController.getOfficeById);
 
 router.get('/:officeId/users', officesController.getUsersByOffice);
 
+router.get('/:officeId/services', officesController.getServicesByOffice);
+
 router.post('/create', createAndDeleteMiddleware, officesController.createOffice);
 
-router.delete('/:id', createAndDeleteMiddleware, officesController.deleteOffice);
+router.delete('/:id/delete', createAndDeleteMiddleware, officesController.deleteOffice);
 
 router.patch('/:id', editMiddleware, officesController.editOffice);
 

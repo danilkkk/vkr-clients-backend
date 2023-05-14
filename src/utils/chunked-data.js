@@ -1,6 +1,6 @@
 const EMPTY = {};
 
-export default async function(mongooseModel, createManyDTO, fieldName, from = 0, count = 100) {
+export default async function(mongooseModel, createManyDTO, fieldName, startPipeline = [], from = 0, count = 100) {
     if (from === undefined || isNaN(from)) {
         from = 0;
     }
@@ -15,13 +15,19 @@ export default async function(mongooseModel, createManyDTO, fieldName, from = 0,
 
     count = Math.min(1000, count);
 
-    const [{totalCount}] = await mongooseModel.aggregate(TOTAL_COUNT_PIPELINE).exec();
+    const totalCountAgg = await mongooseModel.aggregate(getTotalCountPipeline(startPipeline || [])).exec();
+
+    let totalCount = 0;
+
+    if (totalCountAgg && totalCountAgg.length) {
+        totalCount = totalCountAgg[0].totalCount;
+    }
 
     if (from > totalCount) {
         return EMPTY;
     }
 
-    const documents = await mongooseModel.aggregate(getChunkPipeline(from, count)).exec();
+    const documents = await mongooseModel.aggregate(getChunkPipeline(startPipeline || [], from, count)).exec();
 
     const items = createManyDTO(documents);
 
@@ -36,19 +42,24 @@ export default async function(mongooseModel, createManyDTO, fieldName, from = 0,
     }
 }
 
-const TOTAL_COUNT_PIPELINE = [
-    {
-        '$count': 'totalCount'
-    }
-];
+function getTotalCountPipeline(startPipeline) {
+    const pipeline = [...startPipeline];
 
-function getChunkPipeline(from, count) {
-    return [
-        {
-            '$skip': from,
-        },
-        {
-            '$limit': count,
-        }
-    ]
+    pipeline.push({
+        '$count': 'totalCount'
+    });
+
+    return pipeline;
+}
+
+function getChunkPipeline(startPipeline, from, count) {
+    const pipeline = [...startPipeline];
+
+    pipeline.push({
+        '$skip': from,
+    });
+    pipeline.push({
+        '$limit': count,
+    });
+    return pipeline;
 }

@@ -18,7 +18,7 @@ export function getDateStringsFromInterval(from, to) {
 }
 
 export function dateToString(date) {
-    return moment(date).format('YYYY-MM-DD');
+    return moment(Number(date)).format('YYYY-MM-DD');
 }
 
 export function stringToMillis(dateString) {

@@ -37,6 +37,18 @@ class OfficesController {
         }
     }
 
+    async getServicesByOffice(req, res, next) {
+        try {
+            const { officeId } = req.params;
+
+            const users = await officesService.getServicesByOffice(officeId);
+
+            return res.json(users);
+        } catch (e) {
+            next(e);
+        }
+    }
+
     async createOffice(req, res, next) {
         try {
             const { name, email, phone, address } = req.body;
@@ -66,7 +78,8 @@ class OfficesController {
             const { id } = req.params;
             const changes = req.body;
 
-            return await officesService.editOfficeById(id, changes);
+            const office = await officesService.editOfficeById(id, changes);
+            return res.json(office);
         } catch (e) {
             next(e);
         }

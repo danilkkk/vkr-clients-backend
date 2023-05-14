@@ -33,7 +33,6 @@ const sendNotification = async ({ client, specialist, service, cost, startTime, 
 
 const task = async () => {
     const tomorrow = dateToString(getTomorrow());
-    console.log(tomorrow);
     await recordsService.getRecordsOnDate(tomorrow, sendNotification);
 }
 

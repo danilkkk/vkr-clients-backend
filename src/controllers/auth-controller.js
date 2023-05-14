@@ -28,8 +28,8 @@ class AuthController {
                 return next(ApiError.BadRequest('Ошибка валидации', errors.array()))
             }
 
-            const { name, surname, email, phone, password } = req.body;
-            const user = await authService.registration(name, surname, email, phone, password);
+            const { name, surname, email, telegramId, phone, password } = req.body;
+            const user = await authService.registration(name, surname, email, telegramId, phone, password);
 
             saveRefreshTokenToCookie(res, user.refreshToken);
 
@@ -41,13 +41,19 @@ class AuthController {
 
     async login(req, res, next) {
         try {
+
+            console.log('login');
             const { email, phone, password, telegramId } = req.body;
 
-            const user = await authService.login(email, phone,  telegramId, password);
+            if (password && (email || phone || telegramId)) {
+                const user = await authService.login(email, phone, telegramId, password);
 
-            saveRefreshTokenToCookie(res, user.refreshToken);
+                saveRefreshTokenToCookie(res, user.refreshToken);
 
-            return res.json(user);
+                return res.json(user);
+            } else {
+                next(ApiError.BadRequest());
+            }
         } catch (e) {
             next(e);
         }

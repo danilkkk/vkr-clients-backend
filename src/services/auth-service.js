@@ -10,6 +10,7 @@ import Roles from "../models/role-model.js";
 import dotenv from "dotenv";
 import usersService from "./users-service.js";
 import logger from "../logger.js";
+import rolesService from "./roles-service.js";
 
 dotenv.config();
 
@@ -22,7 +23,6 @@ class AuthService {
     }
 
     async resetPassword(email, phone, telegramId) {
-        // const userDocument = await userModel.findOne({ email }).exec();
         const userDocument = await usersService.findUserByEmailOrPhoneOrTgId(email, phone, telegramId);
 
         if (!userDocument) {
@@ -44,8 +44,8 @@ class AuthService {
         return link;
     }
 
-    async registration(name, surname, email, phone, originalPassword) {
-        const candidate = await usersService.findUserByEmailOrPhoneOrTgId(email, phone);
+    async registration(name, surname, email, telegramId, phone, originalPassword) {
+        const candidate = await usersService.findUserByEmailOrPhoneOrTgId(email, phone, telegramId);
 
         const unregistered = candidate && candidate.roles && candidate.roles.includes(Roles.UNREGISTERED.name);
 
@@ -69,12 +69,12 @@ class AuthService {
             await candidate.save();
             userDocument = candidate;
         } else {
-            userDocument = await userModel.create({ name, surname, email, phone, password, activationLink, roles: [Roles.USER.name] });
+            userDocument = await userModel.create({ name, surname, email, telegramId, phone, password, activationLink, roles: [Roles.USER.name] });
         }
 
         await mailService.sendActivationLink(email, name, `${process.env.API_URL}/auth/activate/${activationLink}`);
 
-        return await getUserWithTokens(userDocument)
+        return await getUserWithTokens(userDocument);
     }
 
     async login(email, phone, telegramId, password) {
@@ -98,6 +98,7 @@ class AuthService {
     }
 
     async refresh(refreshToken) {
+        console.error('refresh');
         if (!refreshToken) {
             throw ApiError.UnauthorizedError();
         }
@@ -154,7 +155,8 @@ async function getUserWithTokens(userDocument) {
     return {
         refreshToken,
         accessToken,
-        user
+        user,
+        roles: rolesService.get()
     }
 }
 
