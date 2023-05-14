@@ -1,13 +1,9 @@
 import TelegramBotApi from 'node-telegram-bot-api';
 import logger from "../logger.js";
-import officesService from "../services/offices-service.js";
-import { getMinutesFromMS, getHoursAndMinutesFromMs, formatDate, splitIntervalByIntervals } from '../utils/time-utils.js'
-import usersService from "../services/users-service.js";
-import recordsService from "../services/records-service.js";
-import chatBotService from "../services/chat-bot-service.js";
+import { getMinutesFromMS, formatDate } from '../utils/time-utils.js'
 import dotenv from 'dotenv';
 import authService from "../services/auth-service.js";
-import ChatBotService from "../services/chat-bot-service.js";
+import chatBotService, { Messengers } from "../services/chat-bot-service.js";
 dotenv.config();
 
 const TOKEN = process.env.TELEGRAM_TOKEN;
@@ -18,7 +14,6 @@ const CALLBACK_DATA_SEPARATOR = ':';
 const OPTIONS = { polling: true };
 const HTML_MESSAGE_OPTION = { parse_mode : 'HTML' };
 const UNKNOWN_COMMAND = 'К сожалению, я Вас не понимаю. Введите команду из списка';
-const UNKNOWN_ERROR = 'Произошла непредвиденная ошибка. Попробуйте еще раз.';
 
 const INFO_MESSAGE = `Вы можете использовать следующие команды:\n /appointment - чтобы записаться на прием,\n /records - чтобы посмотреть свои предстоящие записи`
 
@@ -40,8 +35,6 @@ const CallbackTypes = {
     SELECT_TIME: 'select_time',
     CONFIRM_ACTION: 'confirm',
 }
-
-const chatsCache = new Map();
 
 class TelegramBot {
     bot
@@ -91,8 +84,10 @@ class TelegramBot {
                     default:
                         return await this.sendMessage(chatId, UNKNOWN_COMMAND);
                 }
-            } catch (e) {
-                return await this.bot.sendMessage(chatId, UNKNOWN_ERROR);
+            } catch (error) {
+                logger.error(error);
+                await this.sendErrorMessage(chatId, error);
+                return this.sendMessage(chatId, INFO_MESSAGE);
             }
         });
 
@@ -130,39 +125,41 @@ class TelegramBot {
                         logger.error(`Unknown callback type: ${type}`);
                         return await this.bot.sendMessage(chatId, UNKNOWN_COMMAND);
                 }
-            } catch (e) {
-                logger.error(e);
-                return await this.sendMessage(chatId, UNKNOWN_ERROR);
+            } catch (error) {
+                logger.error(error);
+                await this.sendErrorMessage(chatId, error);
+                return this.sendMessage(chatId, INFO_MESSAGE);
             }
         });
     }
 
     async startAppointment(chatId) {
-        await ChatBotService.clearData(chatId);
+        await chatBotService.clearData(chatId);
         const options = await getOfficesButtons();
         return await this.sendMessage(chatId, 'Выберите офис, который Вам будет удобно посетить:', options);
     }
 
     async sendGreeting(chatId, from) {
-        await usersService.registerUserFromTelegram(chatId, from.first_name, from.last_name);
+        await chatBotService.registerUserFromChatBot(Messengers.TELEGRAM, chatId, from.first_name, from.last_name);
         await this.bot.sendSticker(chatId, 'https://tlgrm.ru/_/stickers/319/9d0/3199d0a3-cc1e-3cb6-be7d-dfb398b9af88/256/70.webp');
         await this.sendMessage(chatId, getGreetingMessage(from.first_name));
         return await this.sendMessage(chatId, INFO_MESSAGE);
     }
 
     async bindExistingAccount(chatId) {
-        return await this.sendHTMLMessage(chatId, `Чтобы привязать существующий аккаунт, зайдите в раздел настроек на нашем сайте <a href="${WEB_SITE_URL}">${WEB_SITE_URL}</a> и укажите следующий идентификатор: <b>${chatId}</b>`);
+        return await this.sendHTMLMessage(chatId, await chatBotService.getTelegramCode(chatId));
     }
 
     async generateTempPassword(chatId) {
-        const passwordLink = await authService.resetPassword(undefined, undefined, chatId);
-        await this.sendHTMLMessage(chatId, `Чтобы воспользоваться сайтом, необходим пароль. Чтобы создать новый пароль, перейдите по этой ссылке: <a href="${passwordLink}">${passwordLink}</a>`);
-        await this.sendHTMLMessage(chatId, `В дальнейшем для входа в качестве логина используйте следующий идентификатор: <b>${chatId}</b>`);
-        return await this.sendHTMLMessage(chatId, `Наш сайт: <a href="${WEB_SITE_URL}">${WEB_SITE_URL}</a>`);
+       const messages = await chatBotService.getMessagesWithResetPasswordLink(chatId);
+
+       messages.forEach(async (message) => {
+            await this.sendHTMLMessage(chatId, message);
+        });
     }
 
     async sendUserRecords(chatId) {
-        const records = await recordsService.getClientRecordsByTelegramId(chatId);
+        const records = await chatBotService.getClientRecords(Messengers.TELEGRAM, chatId);
 
         if (!records || records.length === 0) {
             return await this.sendMessage(chatId, 'У Вас пока нет предстоящих записей');
@@ -174,7 +171,7 @@ class TelegramBot {
             const button = getButton('Отменить эту запись', CallbackTypes.CANCEL_RECORD, records[i].id);
             const options = formatButtons([[button]]);
 
-            await this.sendMessage(chatId, `#${i + 1}. ${getRecordString(records[i])}`, options);
+            await this.sendMessage(chatId, `#${i + 1}. ${chatBotService.getRecordString(records[i])}`, options);
         }
     }
 
@@ -192,18 +189,14 @@ class TelegramBot {
 
         await chatBotService.clearData(chatId);
 
-        recordsService.createRecordByTelegramId(chatId, chatInfo.serviceId, chatInfo.scheduleId, Number(startTime)).then(async (record) => {
-            await this.sendMessage(chatId, `Ура, все готово! Запись успешно создана. Проверьте, пожалуйста:`);
-            chatsCache[chatId] = undefined;
-            const okButton = getButton('Да, все хорошо', CallbackTypes.CONFIRM_ACTION, record.id);
-            const RejectButton = getButton('Хочу отменить эту запись', CallbackTypes.CANCEL_RECORD, record.id);
-            const options = formatButtons([[okButton, RejectButton]]);
+        const record = await chatBotService.createRecord(Messengers.TELEGRAM, chatId, chatInfo.serviceId, chatInfo.scheduleId, startTime);
 
-            await this.sendMessage(chatId, getRecordString(record), options);
-        }).catch(async (error) => {
-            await this.sendMessage(chatId, `Хмм... Что-то пошло не так: ${error && error.message}`);
-            await this.sendMessage(chatId, INFO_MESSAGE);
-        })
+        await this.sendMessage(chatId, `Ура, все готово! Запись успешно создана. Проверьте, пожалуйста:`);
+
+        const okButton = getButton('Да, все хорошо', CallbackTypes.CONFIRM_ACTION, record.id);
+        const RejectButton = getButton('Хочу отменить эту запись', CallbackTypes.CANCEL_RECORD, record.id);
+        const options = formatButtons([[okButton, RejectButton]]);
+        await this.sendMessage(chatId, chatBotService.getRecordString(record), options);
     }
 
     async handleDaySelection(chatId, scheduleId) {
@@ -215,16 +208,18 @@ class TelegramBot {
 
         await chatBotService.saveDayBySchedule(chatId, scheduleId);
 
-        const { daySchedule, serviceDuration } = await recordsService.getAvailableTimeIntervalsForServiceByScheduleId(chatInfo.specId, chatInfo.serviceId, scheduleId, Date.now() + 1000 * 60);
+        const { freeTime, serviceDuration } = await chatBotService.getFreeTime(chatInfo.specId, chatInfo.serviceId, scheduleId);
 
-        if (!daySchedule || !daySchedule.freeIntervals || daySchedule.freeIntervals.length === 0) {
+        if (!freeTime) {
             const options = await getFreeDaysButtons(chatInfo.specId, chatInfo.serviceId);
+
             if (options) {
                 return await this.sendMessage(chatId, 'К сожалению, в этот день у мастера нет свободного времени. Попробуйте выбрать другую дату:', options);
             }
         }
 
-        const options = await getFreTimeButtons(daySchedule.freeIntervals, serviceDuration);
+        const options = getFreTimeButtons(freeTime, serviceDuration);
+
         await this.sendMessage(chatId, 'Можете выбрать любое подходящее для Вас время в этот день:', options);
     }
 
@@ -238,6 +233,7 @@ class TelegramBot {
         await chatBotService.saveSpecialist(chatId, specId);
 
         const options = await getFreeDaysButtons(specId, chatInfo.serviceId);
+
         if (options) {
             return await this.sendMessage(chatId, 'Почти готово! Осталось только определиться со временем. Начнем с подходящей даты:', options);
         }
@@ -278,15 +274,18 @@ class TelegramBot {
     }
 
     async handleRecordCancelling(chatId, recordId) {
-        recordsService.deleteRecordByIdByBot(recordId).then(async () => {
-            await this.sendMessage(chatId, 'Запись успешно отменена. Хотите записаться еще раз?');
-            return this.sendMessage(chatId, INFO_MESSAGE);
-        })
+        await chatBotService.deleteRecord(Messengers.TELEGRAM, recordId);
+        await this.sendMessage(chatId, 'Запись успешно отменена. Хотите записаться еще раз?');
+        return this.sendMessage(chatId, INFO_MESSAGE);
+    }
+
+    async sendErrorMessage(chatId, error) {
+        await this.sendMessage(chatId, `Хмм... Что-то пошло не так: ${error && error.message}`);
     }
 }
 
 async function getSpecButtons(serviceId) {
-    const specialists = await usersService.getSpecialistsByService(serviceId);
+    const specialists = await chatBotService.getSpecialistsByService(serviceId);
 
     const preparedData = specialists.map(({ id, name, surname }) => ({
         text: `${name} ${surname}`,
@@ -297,10 +296,8 @@ async function getSpecButtons(serviceId) {
     return getButtonsWithCancelButton(preparedData);
 }
 
-async function getFreTimeButtons(intervals, serviceDuration) {
-    const smallIntervals = intervals.map(interval => splitIntervalByIntervals(interval.from, interval.to, serviceDuration)).flat();
-
-    const preparedData = smallIntervals.map(({ str, ms }) => ({
+function getFreTimeButtons(freeTime) {
+    const preparedData = freeTime.map(({ str, ms }) => ({
         text: str,
         type: CallbackTypes.SELECT_TIME,
         info: ms,
@@ -309,11 +306,12 @@ async function getFreTimeButtons(intervals, serviceDuration) {
     const buttons = getButtons(preparedData);
     const buttonsGrid = getButtonsGrid(buttons, 3);
     addCancelButton(buttonsGrid, true);
+
     return formatButtons(buttonsGrid);
 }
 
 async function getFreeDaysButtons(specId, serviceId) {
-    const { days } = await recordsService.getAvailableDaysForService(specId, serviceId, Date.now() + 1000 * 60);
+    const days  = await chatBotService.getAvailableDaysForService(specId, serviceId);
 
     if (!days || days.length === 0) {
         return;
@@ -326,8 +324,11 @@ async function getFreeDaysButtons(specId, serviceId) {
     }))
 
     const buttons = getButtons(preparedData);
+
     const buttonsGrid = getButtonsGrid(buttons, 3);
+
     addCancelButton(buttonsGrid, true);
+
     return formatButtons(buttonsGrid);
 }
 
@@ -347,9 +348,9 @@ function getButtonsGrid(buttons, itemsInRow = 3) {
 }
 
 async function getServicesButtons(officeId) {
-    const services = await officesService.getServicesByOffice(officeId);
+    const services = await chatBotService.getServicesByOffice(officeId);
 
-    const preparedData = services.map(({ name, id, info, cost, duration }) => ({
+    const preparedData = services.map(({ name, id, cost, duration }) => ({
         text: `${name}, ${cost}₽, ~${Math.floor(getMinutesFromMS(duration))} минут`,
         type: CallbackTypes.SELECT_SERVICE,
         info: id,
@@ -359,7 +360,7 @@ async function getServicesButtons(officeId) {
 }
 
 async function getOfficesButtons() {
-    const offices = await officesService.getAllOffices();
+    const offices = await chatBotService.getOffices();
 
     const preparedData = offices.map(office => ({
         text: `${office.name}, ${office.address}`,
@@ -412,10 +413,6 @@ function getButton(text, type, info) {
 function addCancelButton(buttons, separately = false) {
     const cancelButton = getButton('Отмена', CallbackTypes.CANCEL_OPERATION, '');
     buttons.push(separately ? [cancelButton] : cancelButton);
-}
-
-function getRecordString(record) {
-   return  `Вы записаны на «${record.service.name}» ${formatDate(record.date, true)} в ${getHoursAndMinutesFromMs(record.startTime)} к мастеру ${record.specialist.name} ${record.specialist.surname}. Стоимость услуги ${record.service.cost}₽, длительность ~${Math.floor(getMinutesFromMS(record.service.duration))} минут.`;
 }
 
 export default new TelegramBot();

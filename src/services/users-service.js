@@ -55,14 +55,14 @@ class UsersService {
         return await UserModel.findOne(pipeline).exec();
     }
 
-    async registerUserFromTelegram(telegramId, name, surname) {
-        const candidate = await this.getUserByTelegramId(telegramId);
+    async registerUserFromMessenger(messenger, telegramId, name, surname) {
+        const candidate = await this.getUserViaMessenger(messenger, telegramId);
 
         if (candidate) {
             return;
         }
 
-        await userModel.create({ telegramId, name, surname, roles: [Roles.USER.name], isActivated: true });
+        await userModel.create({ telegramId, telegramCode: v4(), name, surname, roles: [Roles.USER.name], isActivated: true });
     }
 
     async createUser(currentUser, name, surname, email, phone, roles = [Roles.UNREGISTERED.name], officeId) {
@@ -78,7 +78,7 @@ class UsersService {
             roles.push(Roles.UNREGISTERED.name);
         }
 
-        const userDocument = await userModel.create({ name, surname, email, phone, roles });
+        const userDocument = await userModel.create({ name, surname, email, phone, roles, officeId });
 
         return UserDto.Convert(userDocument);
     }
@@ -113,8 +113,6 @@ class UsersService {
         await ServiceSpecialistModel.create({ userId, serviceId });
     }
 
-
-
     async getAllUsers(from, count) {
         return await chunkedData(UserModel, UserDto.ConvertMany, 'users', [], from, count);
     }
@@ -137,7 +135,7 @@ class UsersService {
         return UserDto.Convert(userDocument);
     }
 
-    async getUserByTelegramId(telegramId) {
+    async getUserViaMessenger(_, telegramId) {
         const userDocument = await userModel.findOne({ telegramId }).exec();
         return UserDto.Convert(userDocument);
     }

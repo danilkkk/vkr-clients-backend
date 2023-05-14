@@ -9,6 +9,7 @@ const UserSchema = new Schema({
     phone: { type: String, required: false },
     password: { type: String, required: false },
     telegramId: { type: String, required: false },
+    telegramCode: { type: String, required: false },
     isActivated: { type: Boolean, default: false },
     activationLink: { type: String },
     resetPasswordLink: { type: String, required: false },

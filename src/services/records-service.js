@@ -95,8 +95,8 @@ class RecordsService {
         return RecordDto.Convert(record);
     }
 
-    async createRecordByTelegramId(telegramId, serviceId, scheduleId, startTime) {
-        const user = await usersService.getUserByTelegramId(telegramId);
+    async createRecordViaMessenger(messenger, telegramId, serviceId, scheduleId, startTime) {
+        const user = await usersService.getUserViaMessenger(messenger, telegramId);
         return await this.createRecord(user.id, serviceId, scheduleId, startTime);
     }
 
@@ -124,6 +124,7 @@ class RecordsService {
 
     async getAvailableTimeIntervalsForServiceByScheduleId(specId, serviceId, scheduleId, from) {
         const { days, serviceDuration } = await this.getAvailableDaysForService(specId, serviceId, from);
+
         return {
             daySchedule: days.find(record => String(record.id) === scheduleId),
             serviceDuration
@@ -170,8 +171,8 @@ class RecordsService {
         }
     }
 
-    async getClientRecordsByTelegramId(telegramId) {
-        const user = await usersService.getUserByTelegramId(telegramId);
+    async getClientRecordsByChatId(messenger, telegramId) {
+        const user = await usersService.getUserViaMessenger(messenger, telegramId);
 
         if (user) {
             return (await this.getClientRecordsUncheck(user.id)).records;
@@ -194,7 +195,7 @@ class RecordsService {
         return await this.getClientRecordsUncheck(null, specId, currentUser.id !== specId);
     }
 
-    async deleteRecordByIdByBot(id) {
+    async deleteRecordByIdViaMessenger(_, id) {
         const record = await RecordModel.findById(id).exec();
 
         if (record) {
