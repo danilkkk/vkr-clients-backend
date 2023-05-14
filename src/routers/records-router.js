@@ -19,7 +19,7 @@ router.get('/profit', permissionMiddlewareLight, recordsController.getProfitForP
 
 router.get('/bySpec', permissionMiddlewareLight, recordsController.getRecordsBySpec);
 
-router.delete('/:recordId/delete', permissionMiddleware, recordsController.deleteRecordById);
+router.delete('/:recordId/delete', loggedInOnly, recordsController.deleteRecordById);
 
 router.patch('/:recordId/paid', permissionMiddleware, recordsController.setPaidStatus);
 

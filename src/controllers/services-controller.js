@@ -8,7 +8,8 @@ class ServicesController {
 
     async getAllServices(req, res, next) {
         try {
-            const services = await servicesService.getAllServices();
+
+            const services = await servicesService.getAllServices(req.query.specId);
             return res.json(services);
         } catch (e) {
             next(e);
@@ -41,9 +42,9 @@ class ServicesController {
 
     async createService(req, res, next) {
         try {
-            const { name, info, cost, duration } = req.body;
+            const { name, info, cost, duration, officeId } = req.body;
 
-            const service = await servicesService.createService(name, info, cost, duration);
+            const service = await servicesService.createService(name, info, cost, duration, officeId);
 
             return res.json(service);
         } catch (e) {
@@ -62,11 +63,35 @@ class ServicesController {
         }
     }
 
+    async startExecute(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { specId } = req.body;
+
+            await servicesService.startExecuteService(id, specId);
+            return res.json();
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    async stopExecute(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { specId } = req.body;
+
+            await servicesService.stopExecuteService(id, specId);
+            return res.json();
+        } catch (e) {
+            next(e);
+        }
+    }
+
     async editService(req, res, next) {
         try {
             const { id } = req.params;
             const changes = req.body;
-            return await servicesService.editServiceById(id, changes);
+            return res.json(await servicesService.editServiceById(id, changes));
         } catch (e) {
             next(e);
         }

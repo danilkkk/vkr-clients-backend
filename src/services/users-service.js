@@ -78,7 +78,7 @@ class UsersService {
             roles.push(Roles.UNREGISTERED.name);
         }
 
-        const userDocument = await userModel.create({ name, surname, email, phone, roles, officeId });
+        const userDocument = await userModel.create({ name, surname, email, phone, roles, officeId, password: await bcrypt.hash('123456', PASSWORD_SALT) });
 
         return UserDto.Convert(userDocument);
     }
@@ -88,7 +88,7 @@ class UsersService {
 
         rolesService.checkIfHasMorePriority(currentUser, userDocument.roles);
 
-        await userDocument.delete();
+        await userModel.findOneAndDelete(userDocument._id);
     }
 
     async getSpecialistsByOffice(officeId) {
@@ -133,6 +133,11 @@ class UsersService {
     async getUserById(id) {
         const userDocument = await getUserDocumentById(id);
         return UserDto.Convert(userDocument);
+    }
+
+    async getSpecById(id) {
+        const userDocument = await getUserDocumentById(id);
+        return SpecialistDto.Convert(userDocument);
     }
 
     async getUserViaMessenger(_, telegramId) {

@@ -5,7 +5,7 @@ import schedulePatternsController from "../controllers/schedule-patterns-control
 
 const router = new Router();
 
-const permissionMiddleware = createRoleMiddleware(Roles.SELF_EMPLOYED_SPEC, Roles.ADMINISTRATOR, Roles.SUPERUSER);
+const permissionMiddleware = createRoleMiddleware(Roles.SELF_EMPLOYED_SPEC, Roles.SPECIALIST, Roles.ADMINISTRATOR, Roles.SUPERUSER);
 
 router.get('/', permissionMiddleware, schedulePatternsController.getAllPatternsByUser);
 

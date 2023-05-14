@@ -19,13 +19,15 @@ class OfficesService {
 
     async getServicesByOffice(officeId) {
         const servicesAtOffice = await ServiceOfficeModel.find({ officeId }).populate('serviceId').exec();
+        logger.info('servicesAtOffice');
+        console.log(servicesAtOffice);
         return servicesAtOffice.map(record => ServiceDto.Convert(record.serviceId));
     }
 
     async deleteOfficeById(id) {
         const officeDocument = await getOfficeDocumentById(id);
 
-        await officeDocument.delete();
+        await OfficeModel.findOneAndDelete(officeDocument._id);
     }
 
     async getAllOffices() {

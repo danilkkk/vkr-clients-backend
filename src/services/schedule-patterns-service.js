@@ -2,6 +2,7 @@ import ApiError from "../exceptions/api-error.js";
 import schedulePatternModel from "../models/schedule-pattern-model.js";
 import SchedulePatternDto from "../dtos/schedule-pattern-dto.js";
 import logger from "../logger.js";
+import usersService from "./users-service.js";
 
 class SchedulePatternsService {
     constructor() {

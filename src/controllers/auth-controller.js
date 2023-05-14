@@ -2,17 +2,28 @@ import authService from '../services/auth-service.js';
 import dotenv from 'dotenv';
 import { validationResult } from "express-validator";
 import ApiError from "../exceptions/api-error.js";
-import UserDto from "../dtos/user-dto.js";
 
 dotenv.config();
 
 class AuthController {
 
-    async resetPassword(req, res, next) {
+    async sendResetPasswordLink(req, res, next) {
         try {
-            const { email } = req.body;
+            const { email, phone, telegramId } = req.body;
 
-            await authService.resetPassword(email);
+            await authService.sendResetPasswordLink(email, phone, telegramId );
+
+            return res.json();
+        } catch (e) {
+            next(e);
+        }
+    }
+
+    async changePassword(req, res, next) {
+        try {
+            const { email, phone, telegramId, oldPassword, newPassword  } = req.body;
+
+            await authService.changePassword(email, phone, telegramId, oldPassword, newPassword);
 
             return res.json();
         } catch (e) {

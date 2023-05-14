@@ -11,6 +11,7 @@ import dotenv from "dotenv";
 import usersService from "./users-service.js";
 import logger from "../logger.js";
 import rolesService from "./roles-service.js";
+import telegramBot from "../chat-bots/telegram-bot.js";
 
 dotenv.config();
 
@@ -22,7 +23,7 @@ class AuthService {
         logger.info('[AuthService] initialization...');
     }
 
-    async resetPassword(email, phone, telegramId) {
+    async sendResetPasswordLink(email, phone, telegramId) {
         const userDocument = await usersService.findUserByEmailOrPhoneOrTgId(email, phone, telegramId);
 
         if (!userDocument) {
@@ -35,7 +36,11 @@ class AuthService {
 
         const link = `${process.env.CLIENT_URL}/reset/${resetPasswordLink}`;
 
-        if (email) {
+        if (userDocument.telegramId) {
+            await telegramBot.sendHTMLMessage(userDocument.telegramId, `Ваша ссылка для восстановления пароля: <a href="${link}">${link}</a>`)
+        }
+
+        if (userDocument.email) {
             await mailService.sendResetPasswordLink(email, userDocument.name, link);
         }
 
@@ -140,6 +145,17 @@ class AuthService {
         }
 
         user.resetPasswordLink = null;
+        user.password = await bcrypt.hash(newPassword, PASSWORD_SALT);
+        await user.save();
+    }
+
+    async changePassword(email, newPassword) {
+        const user = await UserModel.findById(userId).exec();
+
+        if (!user) {
+            throw ApiError.NotFound(`Пользователя с id ${userId} не существует`);
+        }
+
         user.password = await bcrypt.hash(newPassword, PASSWORD_SALT);
         await user.save();
     }

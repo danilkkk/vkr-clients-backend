@@ -12,7 +12,9 @@ router.post('/registration',
 
 router.post('/login', authController.login);
 
-router.post('/resetPassword', authController.resetPassword);
+router.post('/resetPassword', authController.sendResetPasswordLink);
+
+router.post('/changePassword', authController.changePassword);
 
 router.get('/logout', authController.logout);
 

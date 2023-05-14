@@ -8,7 +8,6 @@ import scheduleService from "./schedule-service.js";
 import rolesService from "./roles-service.js";
 import Roles from "../models/role-model.js";
 import logger from "../logger.js";
-import moment from "moment";
 
 class RecordsService {
     constructor() {
@@ -40,7 +39,7 @@ class RecordsService {
             rolesService.checkIfHasMorePriority(currentUser, spec.roles, Roles.EMPLOYEE);
         }
 
-        const schedulesOnPeriod = await scheduleService.getScheduleForPeriod(specId, from, to);
+        const { schedule: schedulesOnPeriod } = await scheduleService.getScheduleForPeriod(specId, from, to);
 
         const scheduleIds = schedulesOnPeriod.map(s => s.id);
 
@@ -209,7 +208,7 @@ class RecordsService {
     async deleteRecordById(currentUser, id) {
         const record = await RecordModel.findById(id).exec();
 
-        if (record.clientId !== currentUser.id) {
+        if (String(record.clientId) !== currentUser.id) {
             rolesService.checkPermission(currentUser, Roles.EMPLOYEE);
         }
 

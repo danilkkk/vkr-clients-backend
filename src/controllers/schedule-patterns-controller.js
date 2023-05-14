@@ -5,9 +5,9 @@ class SchedulePatternsController {
 
     async getAllPatternsByUser(req, res, next) {
         try {
-            const currentUser = res.getCurrentUser();
+            const { userId } = req.query;
 
-            const patterns = await schedulePatternsService.getAllPatternsByUser(currentUser.id);
+            const patterns = await schedulePatternsService.getAllPatternsByUser(userId);
 
             return res.json(patterns);
         } catch (e) {

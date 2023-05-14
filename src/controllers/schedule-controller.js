@@ -59,9 +59,9 @@ class ScheduleController {
     async getDefaultScheduleForDays(req, res, next) {
         try {
             const { userId } = req.params;
-            const { dates } = req.body;
+            const { from, to } = req.body;
 
-            const schedule = await scheduleService.getScheduleForDays(userId, dates);
+            const schedule = await scheduleService.getScheduleForPeriod(userId, from, to);
             res.json(schedule);
         } catch (e) {
             next(e);

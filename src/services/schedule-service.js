@@ -6,6 +6,7 @@ import RecordModel from "../models/record-model.js";
 import { ObjectId } from "mongodb";
 import { dateToString, getDateStringsFromInterval, stringToMillis } from "../utils/time-utils.js";
 import logger from "../logger.js";
+import usersService from "./users-service.js";
 
 class ScheduleService {
 
@@ -45,7 +46,7 @@ class ScheduleService {
     async deleteScheduleOnDate(userId, day) {
         const schedule = await getUserScheduleDocumentByDate(userId, day);
 
-        await schedule.delete();
+        await scheduleModel.findByIdAndDelete(schedule._id);
     }
 
     async changePatternOnDay(userId, date, patternId) {
@@ -58,9 +59,13 @@ class ScheduleService {
     }
 
     async getScheduleForDays(userId, dates) {
-        const datesAsStr = dates.map(dateToString);
+        const query = { userId };
 
-        const schedule = await scheduleModel.find({ userId, date: { $in: datesAsStr }})
+        if (dates) {
+            query.date = { $in: dates.map(dateToString) }
+        }
+
+        const schedule = await scheduleModel.find(query)
             .populate('patternId')
             .populate('userId')
             .exec();
@@ -69,8 +74,12 @@ class ScheduleService {
     }
 
     async getScheduleForPeriod(userId, from, to) {
-        const dates = getDateStringsFromInterval(from, to);
-        return await this.getScheduleForDays(userId, dates);
+        const dates = from && to ? getDateStringsFromInterval(from, to) : undefined;
+
+        return {
+            schedule:  await this.getScheduleForDays(userId, dates),
+            user: await usersService.getUserById(userId)
+        }
     }
 
     async getFreeTimeForPeriod(userId, from, to, serviceDuration) {

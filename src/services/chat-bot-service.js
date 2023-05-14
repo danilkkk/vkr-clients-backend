@@ -34,7 +34,7 @@ class ChatBotService {
     }
 
     async getMessagesWithResetPasswordLink(chatId) {
-        const passwordLink = await authService.resetPassword(undefined, undefined, chatId);
+        const passwordLink = await authService.sendResetPasswordLink(undefined, undefined, chatId);
 
         const messages = [];
 

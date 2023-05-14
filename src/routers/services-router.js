@@ -15,8 +15,12 @@ router.get('/:id/users', servicesController.getSpecialistsByService);
 
 router.post('/create', permissionMiddleware, servicesController.createService);
 
-router.delete('/:id', permissionMiddleware, servicesController.deleteService);
+router.delete('/:id/delete', permissionMiddleware, servicesController.deleteService);
 
-router.patch('/:id', permissionMiddleware, servicesController.editService);
+router.post('/:id/startExecute', permissionMiddleware, servicesController.startExecute);
+
+router.post('/:id/stopExecute', permissionMiddleware, servicesController.stopExecute);
+
+router.patch('/:id/edit', permissionMiddleware, servicesController.editService);
 
 export default router;

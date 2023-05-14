@@ -41,9 +41,9 @@ class OfficesController {
         try {
             const { officeId } = req.params;
 
-            const users = await officesService.getServicesByOffice(officeId);
+            const services = await officesService.getServicesByOffice(officeId);
 
-            return res.json(users);
+            return res.json(services);
         } catch (e) {
             next(e);
         }
