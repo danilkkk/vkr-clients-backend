@@ -7,6 +7,7 @@ import recordsService from "./records-service.js";
 import chatBotService from "./chat-bot-service.js";
 import dotenv from 'dotenv';
 import authService from "./auth-service.js";
+import ChatBotService from "./chat-bot-service.js";
 dotenv.config();
 
 const TOKEN = process.env.TELEGRAM_TOKEN;
@@ -137,6 +138,7 @@ class TelegramBotService {
     }
 
     async startAppointment(chatId) {
+        await ChatBotService.clearData(chatId);
         const options = await getOfficesButtons();
         return await this.sendMessage(chatId, 'Выберите офис, который Вам будет удобно посетить:', options);
     }
@@ -306,6 +308,7 @@ async function getFreTimeButtons(intervals, serviceDuration) {
 
     const buttons = getButtons(preparedData);
     const buttonsGrid = getButtonsGrid(buttons, 3);
+    addCancelButton(buttonsGrid, true);
     return formatButtons(buttonsGrid);
 }
 
@@ -324,6 +327,7 @@ async function getFreeDaysButtons(specId, serviceId) {
 
     const buttons = getButtons(preparedData);
     const buttonsGrid = getButtonsGrid(buttons, 3);
+    addCancelButton(buttonsGrid, true);
     return formatButtons(buttonsGrid);
 }
 
@@ -405,8 +409,9 @@ function getButton(text, type, info) {
     }
 }
 
-function addCancelButton(buttons) {
-    buttons.push(getButton('Отмена', CallbackTypes.CANCEL_OPERATION, ''))
+function addCancelButton(buttons, separately = false) {
+    const cancelButton = getButton('Отмена', CallbackTypes.CANCEL_OPERATION, '');
+    buttons.push(separately ? [cancelButton] : cancelButton);
 }
 
 function getRecordString(record) {
