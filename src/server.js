@@ -1,7 +1,7 @@
 import dotenv from 'dotenv';
 import mongoose from "mongoose";
 import logger from "./logger.js";
-import telegramBotService from "./services/telegram-bot-service.js";
+import telegramBot from "./chat-bots/telegram-bot.js";
 import startNotify from "./services/notifier-service.js";
 import app from './app.js';
 
@@ -46,7 +46,7 @@ startServer();
 const cleanUp = () => {
     logger.info('Stopping the server...');
 
-    telegramBotService.stopPoling().then(() => {
+    telegramBot.stopPoling().then(() => {
         logger.info('telegramBotService is closed.');
     });
 

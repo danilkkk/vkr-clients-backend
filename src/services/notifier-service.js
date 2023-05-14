@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import recordsService from "./records-service.js";
 import { dateToString, formatDate, getHoursAndMinutesFromMs, getTomorrow, getMinutesFromMS} from "../utils/time-utils.js";
 import mailService from "./mail-service.js";
-import telegramBotService from "./telegram-bot-service.js";
+import telegramBot from "../chat-bots/telegram-bot.js";
 import RecordDto from "../dtos/record-dto.js";
 import logger from "../logger.js";
 
@@ -24,7 +24,7 @@ const sendNotification = async ({ client, specialist, service, cost, startTime, 
         logger.info(`sent notification to ${client.name}  ${client.surname} by ${client.telegramId ? 'telegram' : 'email'} ${client.telegramId || client.email}`);
 
         if (client.telegramId) {
-            return await telegramBotService.sendHTMLMessage(client.telegramId, message);
+            return await telegramBot.sendHTMLMessage(client.telegramId, message);
         }
 
         if (client.email) {

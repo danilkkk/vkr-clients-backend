@@ -1,13 +1,13 @@
 import TelegramBotApi from 'node-telegram-bot-api';
 import logger from "../logger.js";
-import officesService from "./offices-service.js";
+import officesService from "../services/offices-service.js";
 import { getMinutesFromMS, getHoursAndMinutesFromMs, formatDate, splitIntervalByIntervals } from '../utils/time-utils.js'
-import usersService from "./users-service.js";
-import recordsService from "./records-service.js";
-import chatBotService from "./chat-bot-service.js";
+import usersService from "../services/users-service.js";
+import recordsService from "../services/records-service.js";
+import chatBotService from "../services/chat-bot-service.js";
 import dotenv from 'dotenv';
-import authService from "./auth-service.js";
-import ChatBotService from "./chat-bot-service.js";
+import authService from "../services/auth-service.js";
+import ChatBotService from "../services/chat-bot-service.js";
 dotenv.config();
 
 const TOKEN = process.env.TELEGRAM_TOKEN;
@@ -43,11 +43,11 @@ const CallbackTypes = {
 
 const chatsCache = new Map();
 
-class TelegramBotService {
+class TelegramBot {
     bot
 
     constructor() {
-        logger.info('[TelegramBotService] initialization...');
+        logger.info('[TelegramBot] initialization...');
         this.bot = new TelegramBotApi(TOKEN, OPTIONS);
         this.bot.setMyCommands(COMMANDS);
         this._handleChat();
@@ -418,4 +418,4 @@ function getRecordString(record) {
    return  `Вы записаны на «${record.service.name}» ${formatDate(record.date, true)} в ${getHoursAndMinutesFromMs(record.startTime)} к мастеру ${record.specialist.name} ${record.specialist.surname}. Стоимость услуги ${record.service.cost}₽, длительность ~${Math.floor(getMinutesFromMS(record.service.duration))} минут.`;
 }
 
-export default new TelegramBotService();
+export default new TelegramBot();
