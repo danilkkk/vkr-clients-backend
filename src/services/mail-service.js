@@ -70,13 +70,12 @@ class MailService {
             html
         };
 
-        this.transporter.sendMail(msg , err => {
-            if (err) {
-                return logger.error(err);
-            } else{
-                logger.info('Sent email');
-            }
-        })
+        try {
+            await this.transporter.sendMail(msg);
+            logger.info('Sent email');
+        } catch (e) {
+            logger.error(e);
+        }
     }
 }
 

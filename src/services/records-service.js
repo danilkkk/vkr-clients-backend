@@ -15,23 +15,12 @@ class RecordsService {
         logger.info('[RecordsService] initialization...');
     }
 
-    async getRecordsOnDate(date, callback) {
-        await RecordModel.find().populate('clientId')
+    async getRecordsCursor() {
+        return RecordModel.find().populate('clientId')
             .populate('specId')
             .populate('serviceId')
             .populate('scheduleId')
-            .cursor()
-            .eachAsync(async (record) => {
-                try {
-                    if (record.scheduleId.date === date) {
-                        const recordDto = RecordDto.Convert(record);
-                        return callback(recordDto);
-                    }
-                } catch (e) {
-                    logger.error(e);
-                    console.log(record);
-                }
-            })
+            .cursor();
     }
 
     async getRecordsBySchedule(scheduleId) {
