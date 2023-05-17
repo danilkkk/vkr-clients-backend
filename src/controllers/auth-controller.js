@@ -52,8 +52,6 @@ class AuthController {
 
     async login(req, res, next) {
         try {
-
-            console.log('login');
             const { email, phone, password, telegramId } = req.body;
 
             if (password && (email || phone || telegramId)) {
@@ -108,6 +106,9 @@ class AuthController {
     async refresh(req, res, next) {
         try {
             const { refreshToken } = req.cookies;
+
+            console.log(refreshToken);
+
             const user = await authService.refresh(refreshToken);
 
             saveRefreshTokenToCookie(res, user.refreshToken);
@@ -119,12 +120,16 @@ class AuthController {
     }
 }
 
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+
 function saveRefreshTokenToCookie(res, refreshToken) {
     res.cookie('refreshToken', refreshToken, {
+        expires: new Date(Date.now() + THIRTY_DAYS_MS),
         // 30 days
-        maxAge: 30 * 24 * 60 * 60 * 1000,
+        maxAge: THIRTY_DAYS_MS,
         httpOnly: true,
-        // secure: true,
+        secure: true,
+        sameSite: 'none'
     })
 }
 

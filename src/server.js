@@ -8,7 +8,7 @@ import app from './app.js';
 dotenv.config();
 
 const PORT = process.env.PORT || 5005;
-const DATABASE_URI = /*process.env.DB_URL ||*/ `mongodb://localhost:27017`;
+const DATABASE_URI = process.env.DB_URL /* `mongodb://localhost:27017`*/;
 const DB_NAME = process.env.DB_NAME || 'clients';
 
 let server;

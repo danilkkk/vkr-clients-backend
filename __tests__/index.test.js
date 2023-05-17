@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import mongoose from "mongoose";
 import logger from "../src/logger.js";
 
-const DATABASE_URI = /*process.env.DB_URL ||*/ `mongodb://localhost:27017`;
+const DATABASE_URI = process.env.DB_URL;
 const DB_NAME = process.env.DB_NAME || 'clients';
 
 dotenv.config();

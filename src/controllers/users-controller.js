@@ -16,13 +16,8 @@ class UsersController {
 
     async searchForUsers(req, res, next) {
         try {
-            console.log('searchForUsers');
             const { query } = req.query;
-
-            console.log(query);
-
             const users = await usersService.searchUsers(query);
-
             return res.json(users);
         } catch (e) {
             next(e);

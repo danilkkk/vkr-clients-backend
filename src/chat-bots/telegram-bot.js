@@ -2,12 +2,10 @@ import TelegramBotApi from 'node-telegram-bot-api';
 import logger from "../logger.js";
 import { getMinutesFromMS, formatDate } from '../utils/time-utils.js'
 import dotenv from 'dotenv';
-import authService from "../services/auth-service.js";
 import chatBotService, { Messengers } from "../services/chat-bot-service.js";
 dotenv.config();
 
 const TOKEN = process.env.TELEGRAM_TOKEN;
-const WEB_SITE_URL = process.env.CLIENT_URL;
 
 const CALLBACK_DATA_SEPARATOR = ':';
 
@@ -15,14 +13,18 @@ const OPTIONS = { polling: true };
 const HTML_MESSAGE_OPTION = { parse_mode : 'HTML' };
 const UNKNOWN_COMMAND = 'К сожалению, я Вас не понимаю. Введите команду из списка';
 
-const INFO_MESSAGE = `Вы можете использовать следующие команды:\n /appointment - чтобы записаться на прием,\n /records - чтобы посмотреть свои предстоящие записи`
+const INFO_MESSAGE = `Вы можете использовать следующие команды:
+/appointment - чтобы записаться на прием,
+/records - чтобы посмотреть свои предстоящие записи,
+/bind - чтобы привязать уже существующий аккаунт,
+/reset_password - чтобы сбросить пароль для входа на сайт`;
 
 const COMMANDS = [
     { command: '/start', description: 'Начать!'},
     { command: '/appointment', description: 'Записаться на прием'},
     { command: '/records', description: 'Посмотреть мои записи'},
     { command: '/bind', description: 'Привязать уже существующий аккаунт'},
-    { command: '/temp_password', description: 'Получить временный пароль для входа на сайт'},
+    { command: '/reset_password', description: 'Сбросить пароль для входа на сайт'},
 ];
 
 const CallbackTypes = {
@@ -61,26 +63,19 @@ class TelegramBot {
     async _handleChat() {
         this.bot.on('message', async (message) => {
             const { text, chat, from } = message;
-
             const chatId = chat.id;
-
             try {
                 switch (text) {
                     case '/start':
                         return await this.sendGreeting(chatId, from);
-
                     case '/appointment':
                         return await this.startAppointment(chatId);
-
                     case '/records':
                         return await this.sendUserRecords(chatId);
-
                     case '/bind':
                         return await this.bindExistingAccount(chatId);
-
-                    case '/temp_password':
+                    case '/reset_password':
                         return await this.generateTempPassword(chatId);
-
                     default:
                         return await this.sendMessage(chatId, UNKNOWN_COMMAND);
                 }
@@ -94,7 +89,6 @@ class TelegramBot {
         this.bot.on('callback_query', async msg => {
             const { first: type, second: value } = parseData(msg.data);
             const chatId = msg.message.chat.id;
-
             try {
                 switch (type) {
                     case CallbackTypes.CANCEL_RECORD:

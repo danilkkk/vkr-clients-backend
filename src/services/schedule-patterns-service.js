@@ -32,8 +32,6 @@ class SchedulePatternsService {
 
         this.checkIfTheSameUser(currentUser, patternDocument.userId);
 
-        // TODO удалять паттерн, если он нигде не используется
-
         patternDocument.userId = undefined;
         await patternDocument.save();
     }
